@@ -1,0 +1,21 @@
+{
+  /**
+   * Extiende la base de Expo y no la del monorepo (tsconfig.base.json) a
+   * proposito: la de Expo trae la configuracion que React Native necesita
+   * (JSX, libs, resolucion de los modulos nativos). Las opciones estrictas que
+   * usa el resto del proyecto se repiten aca abajo para no perderlas.
+   */
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "noEmit": true,
+    "paths": {
+      "@/*": ["./*"]
+    }
+  },
+  "include": ["**/*.ts", "**/*.tsx", "nativewind-env.d.ts", ".expo/types/**/*.ts", "expo-env.d.ts"],
+  "exclude": ["node_modules"]
+}

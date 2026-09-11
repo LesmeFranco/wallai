@@ -1,0 +1,36 @@
+# dependencias
+node_modules/
+.pnpm-store/
+
+# build
+.next/
+out/
+dist/
+.turbo/
+*.tsbuildinfo
+
+# entorno (nunca commitear claves)
+.env
+.env.local
+.env.*.local
+.client_secret.json
+
+# expo (a partir de la Semana 3)
+.expo/
+android/
+ios/
+
+# Claude
+CLAUDE.md
+
+# editores / sistema
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
