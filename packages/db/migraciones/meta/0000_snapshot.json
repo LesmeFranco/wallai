@@ -1,0 +1,956 @@
+{
+  "id": "49564e09-dbc0-4e18-9de6-19b94349f3b7",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.usuarios": {
+      "name": "usuarios",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fecha_alta": {
+          "name": "fecha_alta",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "usuarios_email_unique": {
+          "name": "usuarios_email_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "email"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.hogares": {
+      "name": "hogares",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "codigo_invitacion": {
+          "name": "codigo_invitacion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fecha_creacion": {
+          "name": "fecha_creacion",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "hogares_codigo_invitacion_unique": {
+          "name": "hogares_codigo_invitacion_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "codigo_invitacion"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "hogares_codigo_formato": {
+          "name": "hogares_codigo_formato",
+          "value": "\"hogares\".\"codigo_invitacion\" ~ '^[A-Z2-9]{6}$'"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.usuario_hogar": {
+      "name": "usuario_hogar",
+      "schema": "",
+      "columns": {
+        "usuario_id": {
+          "name": "usuario_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "hogar_id": {
+          "name": "hogar_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "unido_en": {
+          "name": "unido_en",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "usuario_hogar_por_hogar": {
+          "name": "usuario_hogar_por_hogar",
+          "columns": [
+            {
+              "expression": "hogar_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "usuario_hogar_usuario_id_usuarios_id_fk": {
+          "name": "usuario_hogar_usuario_id_usuarios_id_fk",
+          "tableFrom": "usuario_hogar",
+          "tableTo": "usuarios",
+          "columnsFrom": [
+            "usuario_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "usuario_hogar_hogar_id_hogares_id_fk": {
+          "name": "usuario_hogar_hogar_id_hogares_id_fk",
+          "tableFrom": "usuario_hogar",
+          "tableTo": "hogares",
+          "columnsFrom": [
+            "hogar_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "usuario_hogar_usuario_id_hogar_id_pk": {
+          "name": "usuario_hogar_usuario_id_hogar_id_pk",
+          "columns": [
+            "usuario_id",
+            "hogar_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.categorias": {
+      "name": "categorias",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "clave": {
+          "name": "clave",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hogar_id": {
+          "name": "hogar_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "creado_en": {
+          "name": "creado_en",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "categorias_global_nombre_unico": {
+          "name": "categorias_global_nombre_unico",
+          "columns": [
+            {
+              "expression": "nombre",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"categorias\".\"hogar_id\" is null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "categorias_hogar_nombre_unico": {
+          "name": "categorias_hogar_nombre_unico",
+          "columns": [
+            {
+              "expression": "hogar_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "nombre",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"categorias\".\"hogar_id\" is not null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "categorias_clave_unica": {
+          "name": "categorias_clave_unica",
+          "columns": [
+            {
+              "expression": "clave",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"categorias\".\"clave\" is not null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "categorias_por_hogar": {
+          "name": "categorias_por_hogar",
+          "columns": [
+            {
+              "expression": "hogar_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "categorias_hogar_id_hogares_id_fk": {
+          "name": "categorias_hogar_id_hogares_id_fk",
+          "tableFrom": "categorias",
+          "tableTo": "hogares",
+          "columnsFrom": [
+            "hogar_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.gastos": {
+      "name": "gastos",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "usuario_id": {
+          "name": "usuario_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "hogar_id": {
+          "name": "hogar_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "monto_centavos": {
+          "name": "monto_centavos",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "texto_original": {
+          "name": "texto_original",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "categoria_id": {
+          "name": "categoria_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "origen_categoria": {
+          "name": "origen_categoria",
+          "type": "origen_categoria",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'automatico'"
+        },
+        "fecha": {
+          "name": "fecha",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "(now() AT TIME ZONE 'America/Argentina/Buenos_Aires')::date"
+        },
+        "medio_de_pago": {
+          "name": "medio_de_pago",
+          "type": "medio_de_pago",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "creado_en": {
+          "name": "creado_en",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "actualizado_en": {
+          "name": "actualizado_en",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "gastos_por_hogar_y_fecha": {
+          "name": "gastos_por_hogar_y_fecha",
+          "columns": [
+            {
+              "expression": "hogar_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "fecha",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "gastos_por_usuario_y_fecha": {
+          "name": "gastos_por_usuario_y_fecha",
+          "columns": [
+            {
+              "expression": "usuario_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "fecha",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "gastos_por_categoria": {
+          "name": "gastos_por_categoria",
+          "columns": [
+            {
+              "expression": "categoria_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "gastos_usuario_id_usuarios_id_fk": {
+          "name": "gastos_usuario_id_usuarios_id_fk",
+          "tableFrom": "gastos",
+          "tableTo": "usuarios",
+          "columnsFrom": [
+            "usuario_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "gastos_hogar_id_hogares_id_fk": {
+          "name": "gastos_hogar_id_hogares_id_fk",
+          "tableFrom": "gastos",
+          "tableTo": "hogares",
+          "columnsFrom": [
+            "hogar_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "gastos_categoria_id_categorias_id_fk": {
+          "name": "gastos_categoria_id_categorias_id_fk",
+          "tableFrom": "gastos",
+          "tableTo": "categorias",
+          "columnsFrom": [
+            "categoria_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "gastos_monto_valido": {
+          "name": "gastos_monto_valido",
+          "value": "\"gastos\".\"monto_centavos\" > 0 and \"gastos\".\"monto_centavos\" <= 1000000000000"
+        },
+        "gastos_texto_no_vacio": {
+          "name": "gastos_texto_no_vacio",
+          "value": "length(trim(\"gastos\".\"texto_original\")) > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.reglas_tageo": {
+      "name": "reglas_tageo",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "hogar_id": {
+          "name": "hogar_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "usuario_id": {
+          "name": "usuario_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "patron": {
+          "name": "patron",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "patron_normalizado": {
+          "name": "patron_normalizado",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "categoria_id": {
+          "name": "categoria_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "veces_confirmada": {
+          "name": "veces_confirmada",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "creado_en": {
+          "name": "creado_en",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "actualizado_en": {
+          "name": "actualizado_en",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "reglas_tageo_patron_por_hogar": {
+          "name": "reglas_tageo_patron_por_hogar",
+          "columns": [
+            {
+              "expression": "hogar_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "patron_normalizado",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"reglas_tageo\".\"hogar_id\" is not null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "reglas_tageo_patron_por_usuario": {
+          "name": "reglas_tageo_patron_por_usuario",
+          "columns": [
+            {
+              "expression": "usuario_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "patron_normalizado",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"reglas_tageo\".\"usuario_id\" is not null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "reglas_tageo_por_hogar": {
+          "name": "reglas_tageo_por_hogar",
+          "columns": [
+            {
+              "expression": "hogar_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "reglas_tageo_por_usuario": {
+          "name": "reglas_tageo_por_usuario",
+          "columns": [
+            {
+              "expression": "usuario_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "reglas_tageo_hogar_id_hogares_id_fk": {
+          "name": "reglas_tageo_hogar_id_hogares_id_fk",
+          "tableFrom": "reglas_tageo",
+          "tableTo": "hogares",
+          "columnsFrom": [
+            "hogar_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "reglas_tageo_usuario_id_usuarios_id_fk": {
+          "name": "reglas_tageo_usuario_id_usuarios_id_fk",
+          "tableFrom": "reglas_tageo",
+          "tableTo": "usuarios",
+          "columnsFrom": [
+            "usuario_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "reglas_tageo_categoria_id_categorias_id_fk": {
+          "name": "reglas_tageo_categoria_id_categorias_id_fk",
+          "tableFrom": "reglas_tageo",
+          "tableTo": "categorias",
+          "columnsFrom": [
+            "categoria_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "reglas_tageo_un_solo_duenio": {
+          "name": "reglas_tageo_un_solo_duenio",
+          "value": "num_nonnulls(\"reglas_tageo\".\"hogar_id\", \"reglas_tageo\".\"usuario_id\") = 1"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.objetivos": {
+      "name": "objetivos",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "usuario_id": {
+          "name": "usuario_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hogar_id": {
+          "name": "hogar_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "categoria_id": {
+          "name": "categoria_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "monto_limite_centavos": {
+          "name": "monto_limite_centavos",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "periodo": {
+          "name": "periodo",
+          "type": "periodo_objetivo",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "activo": {
+          "name": "activo",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "creado_en": {
+          "name": "creado_en",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "objetivos_unico_usuario_categoria": {
+          "name": "objetivos_unico_usuario_categoria",
+          "columns": [
+            {
+              "expression": "usuario_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "categoria_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "periodo",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"objetivos\".\"usuario_id\" is not null and \"objetivos\".\"categoria_id\" is not null and \"objetivos\".\"activo\"",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "objetivos_unico_usuario_total": {
+          "name": "objetivos_unico_usuario_total",
+          "columns": [
+            {
+              "expression": "usuario_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "periodo",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"objetivos\".\"usuario_id\" is not null and \"objetivos\".\"categoria_id\" is null and \"objetivos\".\"activo\"",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "objetivos_unico_hogar_categoria": {
+          "name": "objetivos_unico_hogar_categoria",
+          "columns": [
+            {
+              "expression": "hogar_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "categoria_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "periodo",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"objetivos\".\"hogar_id\" is not null and \"objetivos\".\"categoria_id\" is not null and \"objetivos\".\"activo\"",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "objetivos_unico_hogar_total": {
+          "name": "objetivos_unico_hogar_total",
+          "columns": [
+            {
+              "expression": "hogar_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "periodo",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"objetivos\".\"hogar_id\" is not null and \"objetivos\".\"categoria_id\" is null and \"objetivos\".\"activo\"",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "objetivos_usuario_id_usuarios_id_fk": {
+          "name": "objetivos_usuario_id_usuarios_id_fk",
+          "tableFrom": "objetivos",
+          "tableTo": "usuarios",
+          "columnsFrom": [
+            "usuario_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "objetivos_hogar_id_hogares_id_fk": {
+          "name": "objetivos_hogar_id_hogares_id_fk",
+          "tableFrom": "objetivos",
+          "tableTo": "hogares",
+          "columnsFrom": [
+            "hogar_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "objetivos_categoria_id_categorias_id_fk": {
+          "name": "objetivos_categoria_id_categorias_id_fk",
+          "tableFrom": "objetivos",
+          "tableTo": "categorias",
+          "columnsFrom": [
+            "categoria_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "objetivos_un_solo_duenio": {
+          "name": "objetivos_un_solo_duenio",
+          "value": "num_nonnulls(\"objetivos\".\"usuario_id\", \"objetivos\".\"hogar_id\") = 1"
+        },
+        "objetivos_monto_valido": {
+          "name": "objetivos_monto_valido",
+          "value": "\"objetivos\".\"monto_limite_centavos\" > 0"
+        }
+      },
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "public.medio_de_pago": {
+      "name": "medio_de_pago",
+      "schema": "public",
+      "values": [
+        "efectivo",
+        "debito",
+        "credito",
+        "transferencia",
+        "otro"
+      ]
+    },
+    "public.origen_categoria": {
+      "name": "origen_categoria",
+      "schema": "public",
+      "values": [
+        "automatico",
+        "manual"
+      ]
+    },
+    "public.periodo_objetivo": {
+      "name": "periodo_objetivo",
+      "schema": "public",
+      "values": [
+        "semanal",
+        "mensual"
+      ]
+    }
+  },
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

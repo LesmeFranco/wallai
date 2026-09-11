@@ -1,0 +1,25 @@
+{
+  "name": "@wallai/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.116.0",
+    "@trpc/server": "^11.18.0",
+    "@wallai/db": "workspace:*",
+    "@wallai/validators": "workspace:*",
+    "drizzle-orm": "^0.45.2",
+    "fuse.js": "^7.5.0",
+    "zod": "^4.5.4"
+  },
+  "devDependencies": {
+    "@types/node": "^26.5.0",
+    "typescript": "^7.0.2"
+  }
+}

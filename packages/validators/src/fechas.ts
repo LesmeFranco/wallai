@@ -1,0 +1,44 @@
+const FORMATEADOR_ISO_ARGENTINA = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'America/Argentina/Buenos_Aires',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+});
+
+/**
+ * Fechas del calendario argentino, como "AAAA-MM-DD".
+ *
+ * Se calculan con `Intl` en el huso horario argentino y no con `new Date()`
+ * a secas (que usa el huso del servidor) por la misma razón que el default de
+ * `gastos.fecha` en la base: un proceso corriendo en UTC podría pensar que ya
+ * es el día siguiente. El locale "en-CA" da el formato "AAAA-MM-DD" directo,
+ * sin tener que armarlo a mano con las partes.
+ */
+export function hoyArgentina(): string {
+  return FORMATEADOR_ISO_ARGENTINA.format(new Date());
+}
+
+/**
+ * Suma (o resta, con un número negativo) días a una fecha ISO.
+ *
+ * Trabaja en UTC a propósito: una vez que se tiene el día (año, mes, día) no
+ * hace falta ningún huso horario más, y usar UTC evita que un cambio de hora
+ * del proceso Node corte el día por la mitad.
+ */
+export function sumarDias(fechaISO: string, dias: number): string {
+  const [anio, mes, dia] = fechaISO.split('-').map(Number) as [number, number, number];
+  const fecha = new Date(Date.UTC(anio, mes - 1, dia));
+  fecha.setUTCDate(fecha.getUTCDate() + dias);
+  return fecha.toISOString().slice(0, 10);
+}
+
+/** Primer y último día del mes en curso (calendario argentino), como ISO. */
+export function rangoMesActual(): { desde: string; hasta: string } {
+  const hoy = hoyArgentina();
+  const [anio, mes] = hoy.split('-').map(Number) as [number, number];
+  const desde = `${anio}-${String(mes).padStart(2, '0')}-01`;
+  // Día 0 del mes siguiente = último día de este mes.
+  const ultimoDia = new Date(Date.UTC(anio, mes, 0)).getUTCDate();
+  const hasta = `${anio}-${String(mes).padStart(2, '0')}-${String(ultimoDia).padStart(2, '0')}`;
+  return { desde, hasta };
+}

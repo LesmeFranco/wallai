@@ -1,0 +1,23 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+# Deja node_modules plano, como lo hace npm, en vez del arbol con symlinks que
+# pnpm usa por defecto. Metro (el bundler de Expo) no resuelve bien esos
+# symlinks: el sintoma concreto es que no encuentra las dependencias de una
+# dependencia (por ejemplo react-native-css-interop, que necesita NativeWind),
+# porque en el modo por defecto quedan escondidas en node_modules/.pnpm.
+#
+# Va aca y NO en .npmrc: desde pnpm 10 las opciones propias de pnpm se leen de
+# este archivo, y una linea `node-linker=hoisted` en .npmrc se ignora en
+# silencio (pnpm 12 la da por no definida).
+nodeLinker: hoisted
+
+# pnpm no ejecuta los scripts de instalacion de las dependencias salvo que se
+# listen aca. Es una proteccion contra paquetes maliciosos que corren codigo al
+# instalarse: por defecto ninguno puede. Estos compilan binarios nativos y los
+# necesitan de verdad (esbuild lo usan tsx y drizzle-kit; los otros dos, Next).
+allowBuilds:
+  esbuild: true
+  sharp: true
+  "@tailwindcss/oxide": true
