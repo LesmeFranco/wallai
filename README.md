@@ -41,8 +41,10 @@ producto.
 
 ## Estado actual
 
-Las fases 1, 2 y 3 estan completas y probadas de punta a punta contra Supabase
-real. La app funciona en un telefono de verdad con Expo Go.
+**La app esta desplegada y en uso.** El backend corre en Vercel y hay un APK
+instalado en un telefono real: se carga un gasto con la computadora apagada y
+funciona. Hasta este punto la app solo vivia mientras la maquina de desarrollo
+tenia dos servidores prendidos y el telefono estaba en la misma Wi-Fi.
 
 | Fase | Que | Estado |
 |---|---|---|
@@ -50,15 +52,19 @@ real. La app funciona en un telefono de verdad con Expo Go.
 | 2 | Parser de monto y fecha, motor de tageo que aprende | Completa |
 | 3 | Grupos compartidos, app mobile, editar y borrar gastos | Completa |
 | 3.5 | Varios grupos a la vez, gastos privados, diccionario del motor | Completa |
-| 4.1 | Deploy del backend y build con EAS | En curso |
-| 4.2 | Objetivos de gasto, notificaciones, pulido | Pendiente |
+| 4.1 | Deploy del backend en Vercel y build de Android con EAS | Completa |
+| 4.2 | Objetivos de gasto, notificaciones, pulido de UI | Pendiente |
 
-**Lo que falta para usarla a diario:** hoy la app solo anda mientras la maquina
-de desarrollo tiene corriendo el backend y Metro, y el telefono esta en la misma
-red Wi-Fi. Desplegar el backend y hacer el build es lo que la saca del
-escritorio, y es por eso lo mas importante del momento.
+Lo que queda, en orden de cuanto se nota al usarla:
 
-El login con email y contraseña funciona. El Login de Google todavia no.
+- **El parser pide `$` o la palabra "pesos" antes del monto.** `$30000 nafta` se
+  reconoce; `30000 nafta` no. Es un limite deliberado (un numero suelto es
+  indistinguible de cualquier otro numero de la frase), pero es la friccion que
+  mas se siente al cargar gastos todos los dias.
+- **El login con Google.** El de email y contrasena funciona bien.
+- **Detalles de UI** que solo aparecen usandola a diario.
+- **Objetivos de gasto**, la tabla existe desde la fase 1 pero no tiene ni
+  backend ni pantalla.
 
 ## Requisitos
 
@@ -100,7 +106,10 @@ las consultas del dashboard, comprueba que la base rechace los datos invalidos,
 y al final **revierte todo**: no deja nada cargado, asi que es seguro correrlo
 contra la base real. Termina en "Todo bien".
 
-### 3. Levantar la app
+### 3. Levantar la app en desarrollo
+
+Esto es solo para desarrollar. La app instalada desde el APK no necesita nada de
+esto: habla con el backend desplegado y funciona con la computadora apagada.
 
 Son dos terminales, porque la app mobile necesita el backend corriendo:
 
@@ -131,6 +140,31 @@ anonima a la app mobile.
 
 Un detalle util para el deploy: `SUPABASE_ANON_KEY` no hace falta en el servidor,
 y `SUPABASE_SERVICE_ROLE_KEY` no hace falta en el build de la app.
+
+## Despliegue
+
+**El backend** (`apps/web`) va a Vercel, con el Root Directory apuntado a
+`apps/web` y las tres variables del servidor cargadas en el panel. Dos cosas que
+no son obvias:
+
+- Vercel no soporta pnpm 12 en su imagen de build, asi que hay que activar
+  Corepack con la variable `ENABLE_EXPERIMENTAL_COREPACK=1`. Con eso respeta el
+  campo `packageManager` del `package.json` y usa la version exacta.
+- `packages/api` lee las variables **al cargarse el modulo**, no al recibir un
+  request. Eso significa que si faltan, falla el build entero y no un request
+  suelto. Hay que cargarlas antes del primer deploy.
+
+**La app** se construye con EAS: `eas build --platform android --profile
+preview` produce un APK instalable a mano. Las variables van declaradas dentro
+de `eas.json` y no se leen del `.env`, porque ese archivo esta en `.gitignore` y
+no existe en los servidores de EAS. Que queden escritas ahi no expone nada
+nuevo: son las mismas tres que ya viajan dentro del APK, porque `app.config.ts`
+las pone en `extra` y eso queda embebido en el bundle.
+
+Lo que hace que la app deje de depender de la maquina de desarrollo es
+`WALLAI_URL_API`. Sin esa variable, `lib/entorno.ts` deduce la direccion del
+backend a partir del servidor de Expo, que es lo correcto en desarrollo y no
+existe en un build independiente.
 
 ## Estructura
 
@@ -207,3 +241,12 @@ que el documento eligio tRPC y TypeScript de punta a punta.
   Nunca se edita una migracion ya aplicada: se genera una nueva.
 - Si PostgreSQL deja de responder pero el login sigue andando, probablemente la
   red este filtrando los puertos 5432 y 6543.
+- **Toda tabla nueva necesita `ENABLE ROW LEVEL SECURITY` en su migracion.**
+  Supabase no expone la base solo por este backend: publica ademas cada tabla en
+  una API REST automatica a la que se entra con la clave anonima, que es publica
+  por diseno y viaja dentro del APK. Lo unico que la hace segura es RLS, y **RLS
+  viene desactivado en las tablas creadas por migraciones propias**: solo las
+  creadas desde el panel de Supabase lo traen puesto. La migracion `0006` lo
+  activa en las 7 tablas actuales, sin politicas, porque en esta arquitectura el
+  cliente nunca habla con la base directamente. El backend no se entera porque
+  se conecta con el rol duenio de las tablas, que ignora RLS.
