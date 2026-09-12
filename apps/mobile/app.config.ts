@@ -21,15 +21,29 @@ cargarEnv({ path: '../../.env', quiet: true });
 const config: ExpoConfig = {
   name: 'Wallai',
   slug: 'wallai',
-  version: '0.0.0',
+  /**
+   * Pasa a 1.0.0 con el primer build instalable: hasta ahora la app solo habia
+   * corrido dentro de Expo Go, donde la version no significa nada. Es lo que va
+   * a ver el telefono en la pantalla de informacion de la app.
+   */
+  version: '1.0.0',
   orientation: 'portrait',
   icon: './assets/icon.png',
   scheme: 'wallai',
   userInterfaceStyle: 'dark',
   ios: {
     supportsTablet: true,
+    /**
+     * El identificador con el que el sistema operativo reconoce a la app.
+     *
+     * Es para siempre: si se cambia despues de publicar, el sistema la trata
+     * como una app distinta y quien tenga instalada la vieja no recibe la
+     * nueva como actualizacion, sino que quedan las dos conviviendo.
+     */
+    bundleIdentifier: 'com.wallai.app',
   },
   android: {
+    package: 'com.wallai.app',
     adaptiveIcon: {
       backgroundColor: '#0C0C13',
       foregroundImage: './assets/android-icon-foreground.png',
