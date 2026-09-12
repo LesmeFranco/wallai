@@ -37,8 +37,7 @@ proyecto decide no construir: nada de saldos entre personas, liquidaciones ni
 deudas.
 
 El alcance, el modelo de datos y el stack estan definidos en el documento de
-producto. Las ambiguedades que ese documento dejo abiertas se resuelven en
-`claude/decisiones-mvp.md`, dentro del proyecto de Claude asociado.
+producto.
 
 ## Estado actual
 
@@ -59,8 +58,7 @@ de desarrollo tiene corriendo el backend y Metro, y el telefono esta en la misma
 red Wi-Fi. Desplegar el backend y hacer el build es lo que la saca del
 escritorio, y es por eso lo mas importante del momento.
 
-El login con email y contrasena funciona. El de Google todavia no: el motivo y
-todo lo ya descartado estan documentados en `CLAUDE.md`.
+El login con email y contraseña funciona. El Login de Google todavia no.
 
 ## Requisitos
 
@@ -208,5 +206,4 @@ que el documento eligio tRPC y TypeScript de punta a punta.
   su forma actual, y es lo que permite recrearla desde cero en otra maquina.
   Nunca se edita una migracion ya aplicada: se genera una nueva.
 - Si PostgreSQL deja de responder pero el login sigue andando, probablemente la
-  red este filtrando los puertos 5432 y 6543. Es una trampa ya vista varias
-  veces y esta documentada en `CLAUDE.md`.
+  red este filtrando los puertos 5432 y 6543.
