@@ -85,7 +85,23 @@ const config: ExpoConfig = {
      * de la maquina a mano.
      */
     urlApi: process.env.WALLAI_URL_API,
+
+    /**
+     * Identificador del proyecto en los servidores de Expo, que es lo que le
+     * dice a `eas build` a que proyecto de la cuenta pertenece este codigo.
+     *
+     * Va escrito a mano y no lo puso `eas init` solo: cuando la configuracion
+     * es un archivo TypeScript (y no un app.json estatico), EAS no puede
+     * editarla por su cuenta y avisa que hay que copiarlo. No es un secreto:
+     * identifica al proyecto, no autoriza nada.
+     */
+    eas: {
+      projectId: '6224b987-253d-4e15-9a5f-586c5e4c0365',
+    },
   },
+
+  /** La cuenta de Expo dueña del proyecto. */
+  owner: 'fr4nco',
 };
 
 export default config;
