@@ -3,8 +3,8 @@ import { crearHogarSchema, resumenHogarSchema, unirseHogarSchema } from './hogar
 
 describe('crearHogarSchema', () => {
   it('acepta un nombre válido y recorta espacios', () => {
-    const resultado = crearHogarSchema.parse({ nombre: '  Casa Lesme  ' });
-    expect(resultado.nombre).toBe('Casa Lesme');
+    const resultado = crearHogarSchema.parse({ nombre: '  Casa  ' });
+    expect(resultado.nombre).toBe('Casa');
   });
 
   it('rechaza un nombre vacío', () => {
