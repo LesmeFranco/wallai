@@ -3,7 +3,7 @@ import { alcanceSchema } from './alcance';
 import { CODIGO_INVITACION_REGEX, normalizarCodigoInvitacion } from './codigoInvitacion';
 import { fechaSchema } from './gasto';
 
-/** 60 caracteres alcanza de sobra para "Casa Lesme" o "Depto de Franco y Cami". */
+/** 60 caracteres alcanza de sobra para "Casa" o "Departamento del centro". */
 export const NOMBRE_HOGAR_MAXIMO = 60;
 
 /**

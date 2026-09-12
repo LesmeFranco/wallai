@@ -26,7 +26,7 @@ import { z } from 'zod';
  *  - `hogar`  Los de un grupo puntual, de todos sus miembros (decision D2).
  *
  * Hubo un cuarto alcance, `personal`, que traia solo los gastos privados. Se
- * saco por decision de Franco: `mio` ya incluye los privados junto con todo lo
+ * saco por decision de producto: `mio` ya incluye los privados junto con todo lo
  * demas que cargo la persona, asi que `personal` era un subconjunto que no
  * respondia ninguna pregunta nueva y agregaba una pastilla mas que leer. Que un
  * gasto sea privado se sigue viendo en el candado de cada fila, que es donde

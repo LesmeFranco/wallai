@@ -13,7 +13,7 @@ const DESCRIPCION: Record<TipoHogar, { titulo: string; detalle: string; ejemplo:
   casa: {
     titulo: 'Hogar',
     detalle: 'La gente con la que vivís.',
-    ejemplo: 'Casa de los Lesme',
+    ejemplo: 'Casa',
   },
   grupo: {
     titulo: 'Grupo',

@@ -61,7 +61,9 @@ export const reglasTageo = pgTable(
      * computadora. Normalizando de antemano, la comparacion es justa y ademas
      * no hay que reprocesar cada fila en cada busqueda.
      *
-     * La funcion de normalizacion se implementa en la Semana 2, junto al motor.
+     * La funcion que normaliza es `normalizarTexto`, en
+     * packages/validators/src/texto.ts. Tiene que ser la MISMA al guardar una
+     * regla y al buscarla: si no, una regla guardada no haria match nunca.
      */
     patronNormalizado: text('patron_normalizado').notNull(),
 

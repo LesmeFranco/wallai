@@ -178,8 +178,8 @@ export const gastosRouter = router({
    *
    * Es el único lugar que escribe en `reglas_tageo`. La regla queda a nombre
    * del dueño del GASTO (su hogar si tenía uno al cargarse, o el usuario si
-   * no), no de quien corrige: así, si Mamá corrige un gasto que cargó Franco,
-   * la regla sigue siendo del hogar y beneficia a los dos (decisión del
+   * no), no de quien corrige: así, si un integrante corrige un gasto que cargó
+   * otro, la regla sigue siendo del hogar y beneficia a los dos (decisión del
    * documento sobre aprendizaje compartido).
    *
    * El patrón que se guarda es el texto SIN el monto ni la fecha, recalculado
@@ -256,7 +256,7 @@ export const gastosRouter = router({
    *
    * Decisión de permisos: solo el autor puede editar su gasto, aunque la
    * decisión D2 deje que todo el hogar lo VEA. Ver y modificar no son lo mismo:
-   * si el monto que cargó Papá se le puede cambiar a cualquiera, el total del
+   * si el monto que cargó alguien se le puede cambiar a cualquiera, el total del
    * mes deja de ser confiable y no queda registro de quién lo cambió. Es el
    * criterio conservador para una operación que no se puede deshacer, y es
    * fácil de relajar más adelante si en la práctica molesta.

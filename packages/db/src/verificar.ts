@@ -18,8 +18,8 @@ import { categorias, gastos, hogares, objetivos, reglasTageo, usuarios, usuarioH
 
 config({ path: '../../.env' });
 
-const ID_FRANCO = '11111111-1111-4111-8111-111111111111';
-const ID_MAMA = '22222222-2222-4222-8222-222222222222';
+const ID_ANA = '11111111-1111-4111-8111-111111111111';
+const ID_BETO = '22222222-2222-4222-8222-222222222222';
 
 let fallos = 0;
 
@@ -72,24 +72,24 @@ async function verificar(): Promise<void> {
 
       console.log('\n2. Alta de un hogar con dos miembros');
       await tx.insert(usuarios).values([
-        { id: ID_FRANCO, nombre: 'Franco', email: 'franco@ejemplo.test' },
-        { id: ID_MAMA, nombre: 'Mamá', email: 'mama@ejemplo.test' },
+        { id: ID_ANA, nombre: 'Ana', email: 'ana@ejemplo.test' },
+        { id: ID_BETO, nombre: 'Beto', email: 'beto@ejemplo.test' },
       ]);
       const codigo = generarCodigoInvitacion();
       const [hogar] = await tx
         .insert(hogares)
-        .values({ nombre: 'Casa Lesme', codigoInvitacion: codigo })
+        .values({ nombre: 'Casa de prueba', codigoInvitacion: codigo })
         .returning();
       await tx.insert(usuarioHogar).values([
-        { usuarioId: ID_FRANCO, hogarId: hogar!.id },
-        { usuarioId: ID_MAMA, hogarId: hogar!.id },
+        { usuarioId: ID_ANA, hogarId: hogar!.id },
+        { usuarioId: ID_BETO, hogarId: hogar!.id },
       ]);
       ok(`hogar creado con código ${codigo}`);
 
       console.log('\n3. Carga de gastos');
       await tx.insert(gastos).values([
         {
-          usuarioId: ID_FRANCO,
+          usuarioId: ID_ANA,
           hogarId: hogar!.id,
           montoCentavos: pesosACentavos(30000),
           textoOriginal: '30000 pesos hamburguesa en Guido',
@@ -98,7 +98,7 @@ async function verificar(): Promise<void> {
           medioDePago: 'efectivo',
         },
         {
-          usuarioId: ID_FRANCO,
+          usuarioId: ID_ANA,
           hogarId: hogar!.id,
           montoCentavos: pesosACentavos(1250.5),
           textoOriginal: 'subte',
@@ -106,7 +106,7 @@ async function verificar(): Promise<void> {
           fecha: '2026-09-04',
         },
         {
-          usuarioId: ID_MAMA,
+          usuarioId: ID_BETO,
           hogarId: hogar!.id,
           montoCentavos: pesosACentavos(84300.75),
           textoOriginal: 'super del mes',
@@ -115,7 +115,7 @@ async function verificar(): Promise<void> {
           medioDePago: 'debito',
         },
         {
-          usuarioId: ID_MAMA,
+          usuarioId: ID_BETO,
           hogarId: hogar!.id,
           montoCentavos: pesosACentavos(500000),
           textoOriginal: 'expensas agosto',
@@ -209,7 +209,7 @@ async function verificar(): Promise<void> {
 
       await debeRechazar(t, 'monto en cero', (tx2) =>
         (tx2 as typeof tx).insert(gastos).values({
-          usuarioId: ID_FRANCO,
+          usuarioId: ID_ANA,
           hogarId: hogar!.id,
           montoCentavos: 0,
           textoOriginal: 'gratis',
@@ -219,7 +219,7 @@ async function verificar(): Promise<void> {
 
       await debeRechazar(t, 'monto negativo', (tx2) =>
         (tx2 as typeof tx).insert(gastos).values({
-          usuarioId: ID_FRANCO,
+          usuarioId: ID_ANA,
           hogarId: hogar!.id,
           montoCentavos: -100,
           textoOriginal: 'devolución',
@@ -229,7 +229,7 @@ async function verificar(): Promise<void> {
 
       await debeRechazar(t, 'texto vacío', (tx2) =>
         (tx2 as typeof tx).insert(gastos).values({
-          usuarioId: ID_FRANCO,
+          usuarioId: ID_ANA,
           hogarId: hogar!.id,
           montoCentavos: 100,
           textoOriginal: '   ',
@@ -260,7 +260,7 @@ async function verificar(): Promise<void> {
       await debeRechazar(t, 'regla de tageo con dos dueños', (tx2) =>
         (tx2 as typeof tx).insert(reglasTageo).values({
           hogarId: hogar!.id,
-          usuarioId: ID_FRANCO,
+          usuarioId: ID_ANA,
           patron: 'y',
           patronNormalizado: 'y',
           categoriaId: idOtros,
@@ -270,7 +270,7 @@ async function verificar(): Promise<void> {
       await debeRechazar(t, 'mismo usuario dos veces en el mismo hogar', (tx2) =>
         (tx2 as typeof tx)
           .insert(usuarioHogar)
-          .values({ usuarioId: ID_FRANCO, hogarId: hogar!.id }),
+          .values({ usuarioId: ID_ANA, hogarId: hogar!.id }),
       );
 
       await debeRechazar(t, 'dos objetivos totales mensuales para el mismo hogar', (tx2) =>
@@ -299,7 +299,7 @@ async function verificar(): Promise<void> {
 
       console.log('\n11. Varios grupos, gastos privados y el alcance "solo yo"');
 
-      // Franco se suma a un segundo grupo, que antes la app no permitía.
+      // Ana se suma a un segundo grupo, que antes la app no permitía.
       const [grupoAmigos] = await tx
         .insert(hogares)
         .values({
@@ -308,14 +308,14 @@ async function verificar(): Promise<void> {
           codigoInvitacion: generarCodigoInvitacion(),
         })
         .returning();
-      await tx.insert(usuarioHogar).values({ usuarioId: ID_FRANCO, hogarId: grupoAmigos!.id });
+      await tx.insert(usuarioHogar).values({ usuarioId: ID_ANA, hogarId: grupoAmigos!.id });
 
-      const gruposDeFranco = await tx
+      const gruposDeAna = await tx
         .select({ hogarId: usuarioHogar.hogarId })
         .from(usuarioHogar)
-        .where(eq(usuarioHogar.usuarioId, ID_FRANCO));
-      if (gruposDeFranco.length === 2) ok('una persona puede pertenecer a dos grupos a la vez');
-      else mal(`Franco quedó en ${gruposDeFranco.length} grupos, se esperaban 2`);
+        .where(eq(usuarioHogar.usuarioId, ID_ANA));
+      if (gruposDeAna.length === 2) ok('una persona puede pertenecer a dos grupos a la vez');
+      else mal(`Ana quedó en ${gruposDeAna.length} grupos, se esperaban 2`);
 
       if (grupoAmigos!.tipo === 'grupo' && hogar!.tipo === 'casa') {
         ok('el tipo distingue una casa de un grupo (el hogar viejo quedó en "casa")');
@@ -325,7 +325,7 @@ async function verificar(): Promise<void> {
 
       await tx.insert(gastos).values([
         {
-          usuarioId: ID_FRANCO,
+          usuarioId: ID_ANA,
           hogarId: grupoAmigos!.id,
           montoCentavos: pesosACentavos(12000),
           textoOriginal: 'birra con los pibes',
@@ -334,7 +334,7 @@ async function verificar(): Promise<void> {
         },
         {
           // hogarId en NULL = privado: no suma a ningún grupo.
-          usuarioId: ID_FRANCO,
+          usuarioId: ID_ANA,
           hogarId: null,
           montoCentavos: pesosACentavos(7000),
           textoOriginal: 'regalo sorpresa',
@@ -359,17 +359,17 @@ async function verificar(): Promise<void> {
       }
 
       // El alcance "solo yo" filtra por AUTOR y no por grupo: tiene que ver los
-      // tres gastos de septiembre de Franco (casa, amigos y privado) juntos.
+      // tres gastos de septiembre de Ana (casa, amigos y privado) juntos.
       // Es exactamente lo que fallaba en la app: al entrar a un hogar, "solo
       // yo" mostraba únicamente lo cargado dentro de ese hogar.
       const mios = await tx
         .select({ id: gastos.id })
         .from(gastos)
         .where(
-          and(eq(gastos.usuarioId, ID_FRANCO), gte(gastos.fecha, desde), lte(gastos.fecha, hasta)),
+          and(eq(gastos.usuarioId, ID_ANA), gte(gastos.fecha, desde), lte(gastos.fecha, hasta)),
         );
       if (mios.length === 4) {
-        ok('"solo yo" cruza los grupos: 4 gastos de Franco (2 de la casa, 1 de amigos, 1 privado)');
+        ok('"solo yo" cruza los grupos: 4 gastos de Ana (2 de la casa, 1 de amigos, 1 privado)');
       } else {
         mal(`"solo yo" devolvió ${mios.length} gastos, se esperaban 4`);
       }
@@ -378,7 +378,7 @@ async function verificar(): Promise<void> {
       const privadosEnGrupos = await tx
         .select({ id: gastos.id })
         .from(gastos)
-        .where(and(eq(gastos.usuarioId, ID_FRANCO), sql`${gastos.hogarId} is null`));
+        .where(and(eq(gastos.usuarioId, ID_ANA), sql`${gastos.hogarId} is null`));
       if (privadosEnGrupos.length === 1) ok('el gasto privado quedó sin grupo, como corresponde');
       else mal(`se esperaba 1 gasto privado y hay ${privadosEnGrupos.length}`);
 
