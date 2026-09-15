@@ -50,6 +50,13 @@
       "when": 1789094257598,
       "tag": "0006_habilitar_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1789094357598,
+      "tag": "0007_endurecer_funcion_perfil",
+      "breakpoints": true
     }
   ]
 }
