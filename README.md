@@ -252,6 +252,13 @@ que el documento eligio tRPC y TypeScript de punta a punta.
   activa en las 7 tablas actuales, sin politicas, porque en esta arquitectura el
   cliente nunca habla con la base directamente. El backend no se entera porque
   se conecta con el rol duenio de las tablas, que ignora RLS.
+- **Una funcion nueva en `public` tambien nace con permisos de mas.** PostgreSQL
+  le da EXECUTE a PUBLIC por defecto, y Supabase agrega ademas `anon`,
+  `authenticated` y `service_role` por privilegios predeterminados. En una
+  funcion `SECURITY DEFINER` eso importa, porque corre con los privilegios de su
+  duenio y no con los de quien la llama. La migracion `0007` se lo saca a la
+  unica que hay (la del alta de perfiles) y le fija un `search_path` vacio. Toda
+  funcion `SECURITY DEFINER` nueva lleva su propio REVOKE en su migracion.
 
 ## Licencia
 
