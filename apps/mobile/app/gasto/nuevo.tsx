@@ -80,6 +80,15 @@ export default function NuevoGasto() {
     categoriaId: string;
   } | null>(null);
 
+  /**
+   * La categoria que la persona toco mientras corrige, que NO es todavia la
+   * guardada. Son dos cosas distintas a proposito: `gastoGuardado.categoriaId`
+   * es lo que hay en la base y esto es una intencion sin confirmar. Se separan
+   * porque el paso de confirmar existe justamente para poder cambiar de idea
+   * (o deshacer un toque sin querer) antes de que viaje nada.
+   */
+  const [categoriaElegida, setCategoriaElegida] = useState<string | null>(null);
+
   const crear = trpc.gastos.crear.useMutation({
     onSuccess: (gasto) => {
       setGastoGuardado({
@@ -97,47 +106,57 @@ export default function NuevoGasto() {
   });
 
   /**
-   * Corregir la categoria, con actualizacion optimista.
+   * Corregir la categoria.
    *
-   * Antes esto se sentia trabado y la razon era el orden de las cosas: al
-   * tocar una pastilla se disparaba la mutacion y la pantalla recien se movia
-   * cuando el servidor contestaba. Con la app corriendo contra un backend en
-   * otra maquina eso son cientos de milisegundos o segundos enteros, y durante
-   * todo ese rato la pastilla tocada no se marcaba: parecia que el toque no
-   * habia registrado, asi que uno vuelve a tocar y empeora.
+   * Se dispara una sola vez, al confirmar con "Listo", y no en cada toque de
+   * una pastilla. El cambio es de comportamiento y tiene dos motivos, uno de
+   * uso y uno de fondo:
    *
-   * Ahora la pantalla se actualiza en el mismo instante del toque y la
-   * mutacion viaja despues. Es seguro porque la operacion casi nunca falla, y
-   * si falla se vuelve atras: se restaura la categoria anterior y se muestra
-   * el error, que es preferible a hacer esperar a todo el mundo por el caso
-   * raro.
+   *  - De uso: antes, tocar una pastilla guardaba y cerraba la lista al toque.
+   *    Si uno se equivocaba de pastilla -o solo queria mirar las opciones- ya
+   *    era tarde y habia que volver a abrir la correccion.
+   *
+   *  - De fondo, y es el importante: `gastos.corregirCategoria` no solo cambia
+   *    este gasto, tambien le ENSENA al grupo ("medialunas es comida"). Un
+   *    toque sin querer no deberia dejar una regla aprendida que despues va a
+   *    categorizar mal todo lo parecido. Confirmar a mano es lo que separa
+   *    "estoy mirando las opciones" de "esta es la categoria".
+   *
+   * Al guardar bien se vuelve a la pantalla anterior: la correccion era el
+   * ultimo paso pendiente y quedarse mirando la confirmacion no aporta nada.
    */
   const corregir = trpc.gastos.corregirCategoria.useMutation({
     onSuccess: () => {
-      setCorrigiendo(false);
       void utils.hogares.resumen.invalidate();
       void utils.gastos.listar.invalidate();
+      router.back();
     },
-    onError: (problema, _variables, categoriaPrevia) => {
-      // El tercer argumento es lo que devolvio `onMutate`: la categoria que
-      // habia antes de la correccion optimista.
-      if (typeof categoriaPrevia === 'string') {
-        setGastoGuardado((previo) => (previo ? { ...previo, categoriaId: categoriaPrevia } : previo));
-      }
-      setError(problema.message);
-    },
-    onMutate: (variables) => {
-      setError(null);
-      // Se lee del closure y no desde dentro de un updater de estado: React
-      // puede ejecutar el updater mas tarde, asi que capturar el valor ahi
-      // adentro no garantiza tenerlo a tiempo para devolverlo.
-      const categoriaPrevia = gastoGuardado?.categoriaId;
-      setGastoGuardado((previo) => (previo ? { ...previo, categoriaId: variables.categoriaId } : previo));
-      return categoriaPrevia;
-    },
+    onError: (problema) => setError(problema.message),
   });
 
-  const categoriaGuardada = categorias.data?.find((c) => c.id === gastoGuardado?.categoriaId);
+  /**
+   * El boton de abajo. Guarda la correccion solo si hay algo que cambiar, y en
+   * cualquier caso cierra la pantalla. Es un boton y no dos porque desde el
+   * lado de quien lo usa la accion es una sola: "ya esta, listo".
+   */
+  function confirmarYSalir() {
+    if (!gastoGuardado) return router.back();
+    const elegida = categoriaElegida ?? gastoGuardado.categoriaId;
+    if (elegida === gastoGuardado.categoriaId) return router.back();
+    setError(null);
+    corregir.mutate({ gastoId: gastoGuardado.id, categoriaId: elegida });
+  }
+
+  /**
+   * La categoria que se muestra en pantalla: la que la persona acaba de tocar
+   * si esta corrigiendo, y si no la que quedo guardada. Mostrar la tocada al
+   * instante es lo que hace que el toque se sienta registrado sin haber
+   * guardado nada todavia; el cartel de abajo aclara que falta confirmar.
+   */
+  const categoriaMostradaId = categoriaElegida ?? gastoGuardado?.categoriaId;
+  const categoriaMostrada = categorias.data?.find((c) => c.id === categoriaMostradaId);
+  const hayCambioSinGuardar =
+    categoriaElegida !== null && categoriaElegida !== gastoGuardado?.categoriaId;
 
   const grupoDelDestino =
     destino.tipo === 'hogar' ? misGrupos.find((grupo) => grupo.id === destino.hogarId) : undefined;
@@ -162,7 +181,7 @@ export default function NuevoGasto() {
           <Text className="mt-1 font-cuerpo text-[15px] text-secundario">
             Guardado en{' '}
             <Text className="font-cuerpo-semi text-primario">
-              {categoriaGuardada?.nombre ?? 'Otros'}
+              {categoriaMostrada?.nombre ?? 'Otros'}
             </Text>
           </Text>
           {/* Con varios grupos posibles, saber en cual quedo es tan importante
@@ -181,13 +200,21 @@ export default function NuevoGasto() {
                   key={categoria.id}
                   nombre={categoria.nombre}
                   clave={categoria.clave}
-                  seleccionada={categoria.id === gastoGuardado.categoriaId}
-                  onPress={() =>
-                    corregir.mutate({ gastoId: gastoGuardado.id, categoriaId: categoria.id })
-                  }
+                  /* Se marca la elegida a mano, que puede no ser la guardada
+                     todavia: eso es lo que permite cambiar de idea. */
+                  seleccionada={categoria.id === categoriaMostradaId}
+                  onPress={() => {
+                    setError(null);
+                    setCategoriaElegida(categoria.id);
+                  }}
                 />
               ))}
             </View>
+            <Text className="mt-3.5 text-center font-cuerpo text-xs leading-4 text-tenue">
+              {hayCambioSinGuardar
+                ? 'Todavía no se guardó. Tocá Listo para confirmar.'
+                : 'Elegí la correcta y tocá Listo.'}
+            </Text>
           </Animated.View>
         ) : (
           <Animated.View entering={FadeIn.delay(300)} className="mt-7 items-center gap-3">
@@ -209,7 +236,11 @@ export default function NuevoGasto() {
         {error ? <View className="mt-5 w-full"><MensajeError mensaje={error} /></View> : null}
 
         <View className="mt-9 w-full">
-          <BotonPrimario onPress={() => router.back()}>Listo</BotonPrimario>
+          {/* Un solo boton para las dos cosas: guarda la correccion si hay
+              alguna sin confirmar, y cierra. Ver `confirmarYSalir`. */}
+          <BotonPrimario onPress={confirmarYSalir} cargando={corregir.isPending}>
+            Listo
+          </BotonPrimario>
         </View>
       </View>
     );
