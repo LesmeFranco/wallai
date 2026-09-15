@@ -18,14 +18,19 @@ export type GrupoParaSelector = {
  * desglosar, que es justo el tipo de incoherencia que hace desconfiar de los
  * numeros.
  *
- * El orden de las pastillas va de lo mas general a lo mas especifico: Todo,
- * Solo yo, y despues cada grupo. "Solo yo" va segundo por ser el que mas se usa
- * despues del general.
+ * Una pastilla por pregunta, y son dos: "Mis gastos" (lo que gaste yo, en
+ * donde sea) y un grupo puntual (lo que gastamos entre todos ahi). Antes habia
+ * una tercera, "Todo", que sumaba lo propio con lo de todos los grupos y era el
+ * default. Se saco: mezclaba dos billeteras distintas en un numero que no
+ * contestaba bien ninguna de las dos preguntas, y hacia que lo que cargaban los
+ * demas apareciera en la vista personal de uno en vez de quedarse donde se
+ * comparte. Detalle importante: "Mis gastos" NO excluye lo que cargaste en un
+ * grupo -eso lo gastaste vos igual-, solo excluye lo que cargaron los demas.
  *
- * No hay pastilla de "Privados", a proposito: "Solo yo" ya trae todo lo que
- * cargo la persona, los privados incluidos, asi que filtrar solo los privados
- * seria un subconjunto que no contesta ninguna pregunta distinta. Cuales son
- * privados se ve en el candado de cada fila.
+ * Tampoco hay pastilla de "Privados": "Mis gastos" ya los trae junto con todo
+ * lo demas, asi que filtrar solo los privados seria un subconjunto que no
+ * contesta ninguna pregunta distinta. Cuales son privados se ve en el candado
+ * de cada fila.
  */
 export function SelectorDeAlcance({
   alcance,
@@ -37,16 +42,15 @@ export function SelectorDeAlcance({
   grupos: GrupoParaSelector[];
 }) {
   /**
-   * Sin ningun grupo, todo lo que la persona ve ya es suyo y privado: las tres
-   * opciones devolverian exactamente lo mismo y el selector seria ruido.
-   * Es el caso de alguien que recien se registra, que es justamente a quien no
-   * hay que pedirle decisiones.
+   * Sin ningun grupo, todo lo que la persona ve ya es suyo: la unica pastilla
+   * que quedaria es la que ya esta activa, y un selector de una sola opcion es
+   * ruido. Es el caso de alguien que recien se registra, que es justamente a
+   * quien no hay que pedirle decisiones.
    */
   if (grupos.length === 0) return null;
 
   const opciones: Array<{ clave: string; etiqueta: string; alcance: Alcance }> = [
-    { clave: 'todo', etiqueta: 'Todo', alcance: { tipo: 'todo' } },
-    { clave: 'mio', etiqueta: 'Solo yo', alcance: { tipo: 'mio' } },
+    { clave: 'mio', etiqueta: 'Mis gastos', alcance: { tipo: 'mio' } },
     ...grupos.map((grupo) => ({
       clave: grupo.id,
       etiqueta: `${presentacionDeGrupo(grupo.tipo).icono} ${grupo.nombre}`,
@@ -94,20 +98,22 @@ export function SelectorDeAlcance({
 
 /** El titulo que describe el alcance elegido, para el encabezado de la pantalla. */
 export function tituloDeAlcance(alcance: Alcance, grupos: GrupoParaSelector[]): string {
-  if (alcance.tipo === 'mio') return 'Todo lo que gasté yo';
   if (alcance.tipo === 'hogar') {
     return grupos.find((grupo) => grupo.id === alcance.hogarId)?.nombre ?? 'Grupo';
   }
-  return grupos.length > 0 ? 'Todo' : 'Mis gastos';
+  return 'Mis gastos';
 }
 
 /** Una linea que explica que incluye el alcance, porque no siempre es obvio. */
 export function DescripcionDeAlcance({ alcance }: { alcance: Alcance }) {
   const textos: Record<Alcance['tipo'], string> = {
-    todo: 'Tus gastos privados más los de todos tus grupos.',
-    // Esta es la distincion que la gente confunde, asi que se dice explicito.
+    // Esta es la distincion que la gente confunde, asi que se dice explicito:
+    // lo que cargo uno en un grupo sigue siendo suyo y cuenta aca.
     mio: 'Todo lo que cargaste vos: en cualquier grupo, los privados, y también lo de antes de sumarte.',
     hogar: 'Los gastos de todos los integrantes de este grupo.',
+    // La app ya no ofrece este alcance; el texto queda por si llega del bundle
+    // viejo de la 1.0.0 (ver el comentario de `alcanceSchema`).
+    todo: 'Tus gastos privados más los de todos tus grupos.',
   };
   return (
     <View className="mt-2">

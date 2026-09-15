@@ -30,11 +30,12 @@ export default function Dashboard() {
   const router = useRouter();
   const [periodo, setPeriodo] = useState<Periodo>('este');
   /**
-   * Arranca en "todo" para que la primera pantalla muestre la foto completa:
-   * lo propio mas lo de todos los grupos. La persona elige desde ahi si quiere
-   * mirar solo lo suyo o un grupo puntual.
+   * Arranca en "Mis gastos": la primera pantalla contesta cuanto gasto uno,
+   * que es la pregunta que se hace todos los dias. Lo que gastaron los demas
+   * aparece al entrar a un grupo, que es donde se comparte; no derramado en la
+   * vista personal.
    */
-  const [alcance, setAlcance] = useState<Alcance>({ tipo: 'todo' });
+  const [alcance, setAlcance] = useState<Alcance>({ tipo: 'mio' });
 
   const rango = periodo === 'este' ? rangoMesActual() : rangoMesAnterior();
 
@@ -97,8 +98,8 @@ export default function Dashboard() {
 
         {/*
           El selector se dibuja solo si la persona pertenece a algun grupo: sin
-          grupos, las cuatro opciones muestran lo mismo. El propio componente
-          se encarga de esa decision.
+          grupos queda una sola opcion, la que ya esta activa. El propio
+          componente se encarga de esa decision.
         */}
         <View className="mt-2">
           <SelectorDeAlcance alcance={alcance} onCambiar={setAlcance} grupos={misGrupos} />
@@ -246,7 +247,7 @@ export default function Dashboard() {
 
         {/* La invitación a crear un grupo va atada a NO tener ninguno, no al
             alcance elegido: si estuviera en el `else` del bloque de arriba,
-            aparecería también al mirar "Solo yo" teniendo una casa. */}
+            aparecería también al mirar "Mis gastos" teniendo una casa. */}
         {misGrupos.length === 0 ? (
           <Pressable onPress={() => router.push('/grupos')}>
             <View className="flex-row items-center gap-3.5 rounded-tarjeta border-[1.5px] border-dashed border-borde-claro p-5">
