@@ -6,7 +6,8 @@ import { IconoGoogle } from '../componentes/iconos';
 import { useSesion } from '../lib/sesion';
 
 export default function Login() {
-  const { sesion, entrarConEmail, registrarseConEmail, entrarConGoogle } = useSesion();
+  const { sesion, entrarConEmail, registrarseConEmail, entrarConGoogle, diagnosticoGoogle } =
+    useSesion();
 
   const [email, setEmail] = useState('');
   const [contrasena, setContrasena] = useState('');
@@ -135,6 +136,17 @@ export default function Login() {
               Continuar con Google
             </Text>
           </Pressable>
+
+          {/*
+            El estado del ultimo intento con Google, en chico y gris.
+            En una build instalada no hay terminal donde leer los logs, asi que
+            sin esto un login que falla sin mensaje no deja NADA para
+            diagnosticar: fue exactamente lo que paso la primera vez.
+            Solo aparece despues de intentar, asi que no ensucia la pantalla.
+          */}
+          {diagnosticoGoogle ? (
+            <Text className="font-cuerpo text-xs leading-4 text-tenue">{diagnosticoGoogle}</Text>
+          ) : null}
         </View>
 
         <Pressable
