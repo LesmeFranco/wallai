@@ -78,11 +78,11 @@ Lo que queda, en orden de cuanto se nota al usarla:
 
 ```bash
 pnpm install      # instala todo el workspace de una sola vez
-pnpm test         # 56 tests en packages/validators
+pnpm test         # 61 tests en packages/validators
 pnpm typecheck    # verifica los tipos de los 5 paquetes
 ```
 
-Que deberias ver: los 56 tests en verde y los 5 paquetes sin errores de tipos.
+Que deberias ver: los 61 tests en verde y los 5 paquetes sin errores de tipos.
 
 ### 2. Conectar la base de datos
 
@@ -92,8 +92,9 @@ Que deberias ver: los 56 tests en verde y los 5 paquetes sin errores de tipos.
    IPv6 que en muchas redes no es alcanzable; el Session pooler es IPv4 y, a
    diferencia del Transaction pooler, soporta sentencias preparadas, que es lo
    que necesitan las migraciones de Drizzle.
-3. Crear un archivo `.env` en la raiz del repositorio con las variables de la
-   seccion siguiente.
+3. Copiar `.env.example` a `.env` en la raiz del repositorio y completar los
+   valores. El archivo de ejemplo explica que es cada variable y de donde
+   sacarla.
 
 ```bash
 pnpm --filter @wallai/db db:migrar     # crea las tablas
@@ -124,8 +125,9 @@ no hay que escribir ninguna IP a mano.
 
 ## Variables de entorno
 
-Van en un `.env` en la raiz del monorepo, no dentro de cada app. El archivo esta
-ignorado por git: las claves nunca se commitean.
+Van en un `.env` en la raiz del monorepo, no dentro de cada app. Hay un
+`.env.example` con la lista completa y el porque de cada una; el `.env` de
+verdad esta ignorado por git, asi que las claves nunca se commitean.
 
 | Variable | Para que | Donde se usa |
 |---|---|---|
@@ -250,3 +252,9 @@ que el documento eligio tRPC y TypeScript de punta a punta.
   activa en las 7 tablas actuales, sin politicas, porque en esta arquitectura el
   cliente nunca habla con la base directamente. El backend no se entera porque
   se conecta con el rol duenio de las tablas, que ignora RLS.
+
+## Licencia
+
+Apache 2.0. Se puede usar, modificar y redistribuir, incluso comercialmente,
+manteniendo el aviso de copyright y dejando constancia de los cambios. El texto
+completo esta en [LICENSE](LICENSE).
