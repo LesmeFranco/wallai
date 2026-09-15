@@ -171,9 +171,31 @@ function traducirError(mensaje: string): string {
     'Invalid login credentials': 'El email o la contraseña no son correctos.',
     'Email not confirmed': 'Todavía no confirmaste tu email. Revisá tu correo.',
     'User already registered': 'Ya existe una cuenta con ese email.',
-    'Password should be at least 6 characters':
-      'La contraseña tiene que tener al menos 6 caracteres.',
     'Unable to validate email address: invalid format': 'Ese email no parece válido.',
   };
-  return traducciones[mensaje] ?? mensaje;
+  if (traducciones[mensaje]) return traducciones[mensaje];
+
+  /**
+   * El largo minimo se configura en el panel de Supabase, asi que el numero que
+   * viene en el mensaje puede cambiar sin que se toque una linea de codigo. Se
+   * lee del propio mensaje en vez de escribirlo aca: una traduccion que diga
+   * "6 caracteres" cuando el panel pide 8 es peor que no traducir nada.
+   */
+  const largoMinimo = /^Password should be at least (\d+) characters$/.exec(mensaje);
+  if (largoMinimo) {
+    return `La contraseña tiene que tener al menos ${largoMinimo[1]} caracteres.`;
+  }
+
+  /**
+   * Con la proteccion de contraseñas filtradas activada (Supabase la chequea
+   * contra la base de HaveIBeenPwned), registrarse con una contraseña que
+   * aparecio en alguna filtracion falla con este mensaje. Sin traducir, la
+   * persona lee un texto tecnico en ingles y no entiende que tiene que hacer.
+   */
+  if (mensaje.toLowerCase().includes('known to be weak')) {
+    return 'Esa contraseña apareció en filtraciones conocidas de otros sitios. Elegí otra.';
+  }
+
+  return mensaje;
 }
+
