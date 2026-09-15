@@ -15,7 +15,9 @@ export default function Historial() {
   const insets = useSafeAreaInsets();
   const utils = trpc.useUtils();
   const [busqueda, setBusqueda] = useState('');
-  const [alcance, setAlcance] = useState<Alcance>({ tipo: 'todo' });
+  // Mismo default que el dashboard, a proposito: las dos pantallas tienen
+  // que contestar la misma pregunta salvo que se toque el selector.
+  const [alcance, setAlcance] = useState<Alcance>({ tipo: 'mio' });
   const { sesion } = useSesion();
   const miId = sesion?.user.id;
 
@@ -66,8 +68,8 @@ export default function Historial() {
 
   /**
    * Nombre de cada persona con la que se comparte algun grupo. Se arma con los
-   * miembros de TODOS los grupos y no de uno solo, porque el historial puede
-   * mezclar gastos de varios cuando el alcance es "Todo".
+   * miembros de TODOS los grupos y no de uno solo, porque el alcance se cambia
+   * sin recargar la pantalla y cada grupo trae su propia gente.
    */
   const nombrePorUsuario = useMemo(
     () =>
@@ -124,9 +126,11 @@ export default function Historial() {
       ) : porDia.length === 0 ? (
         <View className="flex-1 items-center justify-center px-10">
           <Text className="text-center font-cuerpo text-[15px] leading-6 text-tenue">
-            {busqueda || alcance.tipo !== 'todo'
-              ? 'No hay gastos que coincidan con ese filtro.'
-              : 'Todavía no cargaste ningún gasto.\nTocá el botón de abajo para empezar.'}
+            {busqueda
+              ? 'No hay gastos que coincidan con esa búsqueda.'
+              : alcance.tipo === 'hogar'
+                ? 'Todavía no hay gastos en este grupo.'
+                : 'Todavía no cargaste ningún gasto.\nTocá el botón de abajo para empezar.'}
           </Text>
         </View>
       ) : (

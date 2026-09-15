@@ -14,21 +14,21 @@ import type { Contexto } from './context';
  * mostrar conjuntos distintos de gastos, y ese es el tipo de diferencia que
  * nadie nota hasta que los numeros no cierran.
  *
- * Las tres variantes, y por que cada una filtra como filtra:
+ * Las variantes, y por que cada una filtra como filtra:
  *
- *  - `mio`: `usuario_id = yo`, sin ninguna condicion sobre el grupo. Es la
- *    correccion del problema que se veia en la app: antes, al entrar a un
- *    hogar, "solo yo" mostraba unicamente lo cargado DENTRO de ese hogar, asi
- *    que todo lo gastado antes de sumarse desaparecia. Ahora "lo que gaste yo"
+ *  - `mio`: `usuario_id = yo`, sin ninguna condicion sobre el grupo. Es el
+ *    alcance por defecto y la vista personal de la app. "Lo que gaste yo"
  *    quiere decir eso literalmente: todo, en cualquier grupo, en cualquier
  *    momento, incluidos los grupos de los que despues se fue y los privados.
  *
  *  - `hogar`: todos los gastos de ese grupo, de todos sus miembros (D2), previa
- *    verificacion de que quien pregunta sea miembro.
+ *    verificacion de que quien pregunta sea miembro. Es el unico lugar donde
+ *    aparece lo que cargaron los demas, que es justamente el punto: se ve
+ *    donde se comparte.
  *
- *  - `todo`: lo mio mas lo de todos mis grupos. Es una union, no una
- *    interseccion: incluye mis gastos privados (que nadie mas ve) y tambien
- *    los gastos que cargaron otros miembros en mis grupos.
+ *  - `todo`: lo mio mas lo de todos mis grupos, mezclado. Ya no se ofrece en la
+ *    app (ver el comentario de `alcanceSchema`); se sigue atendiendo porque la
+ *    version 1.0.0 instalada lo manda.
  *
  * Todas las ramas estan ancladas a `yo` o a grupos de los que `yo` es miembro,
  * asi que ningun alcance puede devolver gastos de gente con la que no se
