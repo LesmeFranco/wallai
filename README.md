@@ -43,7 +43,7 @@ producto.
 
 **La app esta desplegada y en uso.** El backend corre en Vercel y hay un APK
 instalado en un telefono real: se carga un gasto con la computadora apagada y
-funciona. Hasta este punto la app solo vivia mientras la maquina de desarrollo
+funciona. Hasta la fase 4.1 la app solo vivia mientras la maquina de desarrollo
 tenia dos servidores prendidos y el telefono estaba en la misma Wi-Fi.
 
 | Fase | Que | Estado |
@@ -55,16 +55,21 @@ tenia dos servidores prendidos y el telefono estaba en la misma Wi-Fi.
 | 4.1 | Deploy del backend en Vercel y build de Android con EAS | Completa |
 | 4.2 | Objetivos de gasto, notificaciones, pulido de UI | Pendiente |
 
+La version instalada es la **1.1.0**, que trajo lo que se noto usando la app
+todos los dias: el selector de que gastos se miran sin la vista que mezclaba lo
+propio con lo de los demas, la correccion de categoria con un paso de confirmar,
+y el login con Google funcionando.
+
 Lo que queda, en orden de cuanto se nota al usarla:
 
 - **El parser pide `$` o la palabra "pesos" antes del monto.** `$30000 nafta` se
   reconoce; `30000 nafta` no. Es un limite deliberado (un numero suelto es
   indistinguible de cualquier otro numero de la frase), pero es la friccion que
   mas se siente al cargar gastos todos los dias.
-- **El login con Google.** El de email y contrasena funciona bien.
-- **Detalles de UI** que solo aparecen usandola a diario.
 - **Objetivos de gasto**, la tabla existe desde la fase 1 pero no tiene ni
   backend ni pantalla.
+- **Notificaciones push**, que son el resto de la fase 4.2.
+- **Detalles de UI** que solo aparecen usandola a diario.
 
 ## Requisitos
 
@@ -243,6 +248,19 @@ que el documento eligio tRPC y TypeScript de punta a punta.
   Nunca se edita una migracion ya aplicada: se genera una nueva.
 - Si PostgreSQL deja de responder pero el login sigue andando, probablemente la
   red este filtrando los puertos 5432 y 6543.
+- **El login social no puede depender de que la app siga viva.** Al volver del
+  navegador por un esquema propio (`wallai://`), Android puede levantar la app
+  de cero: el proceso arranca nuevo y la funcion que esperaba el retorno
+  desaparece con todo el estado, asi que el codigo de autorizacion llega a una
+  app que ya no lo espera. El sintoma es tan mudo como enganoso: se vuelve a la
+  pantalla de login sin sesion y sin ningun error. Por eso el canje tambien se
+  hace desde un escucha de deep links (`lib/sesion.tsx`), que funciona venga la
+  app de cero o de segundo plano.
+- **Para saber que URL de retorno acepta Supabase, preguntarle a la base.**
+  GoTrue guarda en `auth.flow_state.referrer` el retorno ya validado contra la
+  lista de Redirect URLs: si se pide una URL permitida queda esa, y si no queda
+  la Site URL. Es una respuesta directa, a diferencia de `generate_link`, que da
+  falsos negativos con los esquemas propios.
 - **Toda tabla nueva necesita `ENABLE ROW LEVEL SECURITY` en su migracion.**
   Supabase no expone la base solo por este backend: publica ademas cada tabla en
   una API REST automatica a la que se entra con la clave anonima, que es publica
