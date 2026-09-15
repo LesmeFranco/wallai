@@ -22,11 +22,16 @@ const config: ExpoConfig = {
   name: 'Wallai',
   slug: 'wallai',
   /**
-   * Pasa a 1.0.0 con el primer build instalable: hasta ahora la app solo habia
-   * corrido dentro de Expo Go, donde la version no significa nada. Es lo que va
-   * a ver el telefono en la pantalla de informacion de la app.
+   * La version que muestra el telefono en la pantalla de informacion de la app.
+   *
+   * 1.0.0 fue el primer build instalable. 1.1.0 trae el selector de alcance sin
+   * la vista mezclada, la correccion de categoria con confirmacion, y el login
+   * con Google atendiendo el deep link de vuelta.
+   *
+   * Subirla no es tramite: es lo unico que permite mirar el telefono y saber
+   * cual de los dos APK quedo instalado.
    */
-  version: '1.0.0',
+  version: '1.1.0',
   orientation: 'portrait',
   icon: './assets/icon.png',
   scheme: 'wallai',
@@ -44,6 +49,13 @@ const config: ExpoConfig = {
   },
   android: {
     package: 'com.wallai.app',
+    /**
+     * El numero que mira Android para decidir si un APK es mas nuevo que el
+     * instalado. Es un entero y solo puede subir; no tiene relacion con
+     * `version`, que es el texto que ve la persona. El primer build no lo
+     * declaraba y quedo en 1.
+     */
+    versionCode: 2,
     adaptiveIcon: {
       backgroundColor: '#0C0C13',
       foregroundImage: './assets/android-icon-foreground.png',
