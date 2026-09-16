@@ -82,11 +82,11 @@ Lo que queda, en orden de cuanto se nota al usarla:
 
 ```bash
 pnpm install      # instala todo el workspace de una sola vez
-pnpm test         # 61 tests en packages/validators
+pnpm test         # 67 tests en packages/validators
 pnpm typecheck    # verifica los tipos de los 5 paquetes
 ```
 
-Que deberias ver: los 61 tests en verde y los 5 paquetes sin errores de tipos.
+Que deberias ver: los 67 tests en verde y los 5 paquetes sin errores de tipos.
 
 ### 2. Conectar la base de datos
 
