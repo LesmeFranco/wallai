@@ -175,3 +175,28 @@ export function IconoGoogle() {
     </Svg>
   );
 }
+
+/**
+ * Ojo para mostrar u ocultar la contrasena mientras se escribe.
+ *
+ * La version tachada es el mismo ojo con una barra en diagonal encima, y no un
+ * dibujo aparte: asi el boton no cambia de forma al tocarlo, que es lo que
+ * permite entender que es el mismo control en dos estados.
+ */
+export function IconoOjo({ tachado = false }: { tachado?: boolean }) {
+  return (
+    <Svg width={20} height={20} viewBox="0 0 20 20" fill="none">
+      <Path
+        d="M1.5 10S4.7 4.5 10 4.5 18.5 10 18.5 10 15.3 15.5 10 15.5 1.5 10 1.5 10z"
+        stroke={TENUE}
+        strokeWidth={1.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Circle cx={10} cy={10} r={2.5} stroke={TENUE} strokeWidth={1.5} />
+      {tachado ? (
+        <Path d="M3.5 16.5l13-13" stroke={TENUE} strokeWidth={1.5} strokeLinecap="round" />
+      ) : null}
+    </Svg>
+  );
+}
