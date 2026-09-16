@@ -56,11 +56,12 @@ tenia dos servidores prendidos y el telefono estaba en la misma Wi-Fi.
 | 4.1 | Deploy del backend en Vercel y build de Android con EAS | Completa |
 | 4.2 | Objetivos de gasto, notificaciones, pulido de UI | Pendiente |
 
-La version instalada es la **1.2.0**. Lo que trajeron las dos ultimas salio
+La version instalada es la **1.3.0**. Lo que trajeron las dos ultimas salio
 entero de usar la app todos los dias: el selector de que gastos se miran sin la
 vista que mezclaba lo propio con lo de los demas, la correccion de categoria con
 un paso de confirmar, el login con Google funcionando, el monto sin necesidad de
-escribir "$" adelante, y el ojo para ver la contrasena al escribirla.
+escribir "$" adelante, el ojo para ver la contrasena al escribirla, y los
+cuadros de confirmar con el estilo de la app en vez de los del sistema.
 
 Lo que queda, en orden de cuanto se nota al usarla:
 
