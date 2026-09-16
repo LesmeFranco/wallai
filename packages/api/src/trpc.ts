@@ -16,7 +16,7 @@ export const publicProcedure = t.procedure;
  */
 export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
   if (!ctx.usuario) {
-    throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Hay que iniciar sesión.' });
+    throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Iniciá sesión para continuar.' });
   }
   return next({ ctx: { ...ctx, usuario: ctx.usuario } });
 });

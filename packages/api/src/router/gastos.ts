@@ -41,7 +41,7 @@ async function resolverHogarDelGasto(
   if (!(await esMiembro(db, usuarioId, destino.hogarId))) {
     throw new TRPCError({
       code: 'FORBIDDEN',
-      message: 'No pertenecés a ese grupo, así que no podés cargarle gastos.',
+      message: 'No pertenecés a ese grupo.',
     });
   }
   return destino.hogarId;
@@ -71,7 +71,7 @@ export const gastosRouter = router({
         code: 'BAD_REQUEST',
         // El ejemplo enseña la forma más corta que funciona, que es con la que
         // conviene que la persona se quede: el monto abriendo el texto.
-        message: 'No encontré ningún monto en el texto. Empezá por el monto, como "500 café".',
+        message: 'Falta el monto. Empezá por ahí: "500 café".',
       });
     }
 
@@ -201,7 +201,7 @@ export const gastosRouter = router({
       ? await esMiembro(ctx.db, ctx.usuario.id, gasto.hogarId)
       : gasto.usuarioId === ctx.usuario.id;
     if (!puedeVerlo) {
-      throw new TRPCError({ code: 'FORBIDDEN', message: 'Ese gasto no es tuyo ni de un grupo tuyo.' });
+      throw new TRPCError({ code: 'FORBIDDEN', message: 'No tenés acceso a ese gasto.' });
     }
 
     const [gastoActualizado] = await ctx.db
@@ -276,7 +276,7 @@ export const gastosRouter = router({
     if (gasto.usuarioId !== ctx.usuario.id) {
       throw new TRPCError({
         code: 'FORBIDDEN',
-        message: 'Solo quien cargó el gasto puede modificarlo.',
+        message: 'Solo quien lo cargó puede modificarlo.',
       });
     }
 
@@ -315,7 +315,7 @@ export const gastosRouter = router({
     if (gasto.usuarioId !== ctx.usuario.id) {
       throw new TRPCError({
         code: 'FORBIDDEN',
-        message: 'Solo quien cargó el gasto puede borrarlo.',
+        message: 'Solo quien lo cargó puede borrarlo.',
       });
     }
 

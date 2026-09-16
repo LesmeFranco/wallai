@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Alert, Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { centavosAPesos, pesosACentavos } from '@wallai/validators';
+import { useDialogos } from './Dialogo';
 import { BotonPrimario, Etiqueta, MensajeError, PastillaCategoria } from './base';
 import { formatearDiaLargo, capitalizar } from '../lib/formato';
 import { trpc } from '../lib/trpc';
@@ -33,6 +34,7 @@ export function EditorDeGasto({
   onCerrar: () => void;
 }) {
   const utils = trpc.useUtils();
+  const { confirmar } = useDialogos();
   const categorias = trpc.categorias.listar.useQuery();
 
   /**
@@ -82,19 +84,18 @@ export function EditorDeGasto({
     montoValido &&
     (pesosACentavos(montoEnPesos) !== gasto.montoCentavos || categoriaId !== gasto.categoriaId);
 
-  // El id se copia a una constante porque dentro del callback del Alert
+  // El id se copia a una constante porque dentro de la funcion asincronica
   // TypeScript ya no puede garantizar que `gasto` siga sin ser null.
   const gastoId = gasto.id;
 
-  function confirmarBorrado() {
-    Alert.alert('¿Borrar este gasto?', 'No se puede deshacer.', [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Borrar',
-        style: 'destructive',
-        onPress: () => eliminar.mutate({ gastoId }),
-      },
-    ]);
+  async function confirmarBorrado() {
+    const seguro = await confirmar({
+      titulo: '¿Borrar este gasto?',
+      mensaje: 'No se puede deshacer.',
+      confirmar: 'Borrar',
+      destructivo: true,
+    });
+    if (seguro) eliminar.mutate({ gastoId });
   }
 
   return (
@@ -175,7 +176,7 @@ export function EditorDeGasto({
               </BotonPrimario>
 
               <Pressable
-                onPress={confirmarBorrado}
+                onPress={() => void confirmarBorrado()}
                 disabled={eliminar.isPending}
                 className="items-center rounded-boton border-[1.5px] border-coral/40 py-3.5 active:opacity-70"
               >

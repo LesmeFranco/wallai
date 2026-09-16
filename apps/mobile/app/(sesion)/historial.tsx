@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Alcance } from '@wallai/validators';
 import { BotonFlotante } from '../../componentes/BotonFlotante';
 import { EditorDeGasto } from '../../componentes/EditorDeGasto';
+import { useDialogos } from '../../componentes/Dialogo';
 import { SelectorDeAlcance } from '../../componentes/SelectorDeAlcance';
 import { Cargando, IconoCategoria, MensajeError, Tarjeta } from '../../componentes/base';
 import { IconoBorrar, IconoBuscar, IconoCandado } from '../../componentes/iconos';
@@ -19,6 +20,7 @@ export default function Historial() {
   // que contestar la misma pregunta salvo que se toque el selector.
   const [alcance, setAlcance] = useState<Alcance>({ tipo: 'mio' });
   const { sesion } = useSesion();
+  const { confirmar, avisar } = useDialogos();
   const miId = sesion?.user.id;
 
   const grupos = trpc.hogares.mios.useQuery();
@@ -47,14 +49,17 @@ export default function Historial() {
       void utils.gastos.listar.invalidate();
       void utils.hogares.resumen.invalidate();
     },
-    onError: (problema) => Alert.alert('No se pudo borrar', problema.message),
+    onError: (problema) => void avisar({ titulo: 'No se pudo borrar', mensaje: problema.message }),
   });
 
-  function confirmarBorrado(gastoId: string, texto: string) {
-    Alert.alert('¿Borrar este gasto?', `"${texto}"\n\nNo se puede deshacer.`, [
-      { text: 'Cancelar', style: 'cancel' },
-      { text: 'Borrar', style: 'destructive', onPress: () => eliminar.mutate({ gastoId }) },
-    ]);
+  async function confirmarBorrado(gastoId: string, texto: string) {
+    const seguro = await confirmar({
+      titulo: '¿Borrar este gasto?',
+      mensaje: `"${texto}". No se puede deshacer.`,
+      confirmar: 'Borrar',
+      destructivo: true,
+    });
+    if (seguro) eliminar.mutate({ gastoId });
   }
 
   type GastoDeLista = NonNullable<typeof gastos.data>['gastos'][number];
@@ -193,7 +198,7 @@ export default function Historial() {
                         </Text>
                         {esMio ? (
                           <Pressable
-                            onPress={() => confirmarBorrado(gasto.id, gasto.textoOriginal)}
+                            onPress={() => void confirmarBorrado(gasto.id, gasto.textoOriginal)}
                             disabled={eliminar.isPending}
                             // hitSlop agranda el area tocable sin agrandar el
                             // dibujo: un tacho de 18px es preciso de acertar

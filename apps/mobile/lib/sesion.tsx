@@ -203,12 +203,20 @@ export function ProveedorDeSesion({ children }: { children: ReactNode }) {
           provider: 'google',
           options: { redirectTo, skipBrowserRedirect: true },
         });
+        /**
+         * Los mensajes que se lanzan de aca en adelante son cortos y sin
+         * jerga, porque van a la pantalla: la persona que los lee no puede
+         * hacer nada con un "Redirect URL". El detalle tecnico -la URL de
+         * retorno, el motivo exacto- va al diagnostico, que es donde sirve.
+         */
         if (error) {
-          throw new Error(
-            `${traducirError(error.message)}\n\nURL de retorno usada: ${redirectTo}\nTiene que estar permitida en Supabase (Authentication > URL Configuration > Redirect URLs).`,
-          );
+          setDiagnosticoGoogle(`Supabase rechazó el pedido: ${error.message}. Retorno: ${redirectTo}`);
+          throw new Error('No se pudo abrir el login de Google.');
         }
-        if (!data.url) throw new Error('Supabase no devolvió la URL de Google.');
+        if (!data.url) {
+          setDiagnosticoGoogle(`Supabase no devolvió la URL de Google. Retorno: ${redirectTo}`);
+          throw new Error('No se pudo abrir el login de Google.');
+        }
 
         console.warn(`[google] abriendo navegador. redirectTo=${redirectTo}`);
         setDiagnosticoGoogle(`Abriendo Google. Vuelta esperada a ${redirectTo}`);
@@ -221,11 +229,9 @@ export function ProveedorDeSesion({ children }: { children: ReactNode }) {
 
         if (resultado.type === 'success') {
           const detalle = await canjearCodigoDeUrl(resultado.url);
-          setDiagnosticoGoogle(`Vuelta del navegador: ${detalle}.`);
+          setDiagnosticoGoogle(`Vuelta del navegador: ${detalle}. Retorno: ${redirectTo}`);
           if (detalle === 'sesión iniciada' || detalle === 'código ya canjeado') return;
-          throw new Error(
-            `${detalle[0]!.toUpperCase()}${detalle.slice(1)}.\n\nURL de retorno usada: ${redirectTo}`,
-          );
+          throw new Error('No se pudo completar el login con Google.');
         }
 
         /**
@@ -242,9 +248,15 @@ export function ProveedorDeSesion({ children }: { children: ReactNode }) {
           return;
         }
 
-        setDiagnosticoGoogle(`El navegador volvió sin completar el login (${resultado.type}).`);
+        setDiagnosticoGoogle(
+          `El navegador volvió sin completar (${resultado.type}). Retorno esperado: ${redirectTo}`,
+        );
+        // Cerrar el navegador a proposito no es un error del que haya que
+        // disculparse: se dice lo que paso y nada mas.
         throw new Error(
-          `El navegador volvió sin completar el login (${resultado.type}).\n\nURL de retorno esperada: ${redirectTo}\nSi el navegador terminó en otra dirección, esa URL tiene que estar en Supabase: Authentication > URL Configuration > Redirect URLs.`,
+          resultado.type === 'cancel' || resultado.type === 'dismiss'
+            ? 'Cancelaste el login con Google.'
+            : 'No se pudo completar el login con Google.',
         );
       },
 

@@ -9,6 +9,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useFonts } from 'expo-font';
 import { Outfit_600SemiBold, Outfit_700Bold, Outfit_800ExtraBold } from '@expo-google-fonts/outfit';
 import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold } from '@expo-google-fonts/inter';
+import { ProveedorDeDialogos } from '../componentes/Dialogo';
 import { ProveedorDeSesion } from '../lib/sesion';
 import { crearClienteTrpc, trpc } from '../lib/trpc';
 
@@ -51,22 +52,27 @@ export default function LayoutRaiz() {
     <trpc.Provider client={clienteTrpc} queryClient={clienteQuery}>
       <QueryClientProvider client={clienteQuery}>
         <ProveedorDeSesion>
-          <SafeAreaProvider>
-            <StatusBar style="light" />
-            {/* El fondo se pinta aca y no en cada pantalla para que no haya un
+          {/* Los dialogos se dibujan una sola vez, desde la raiz: asi ninguna
+              pantalla puede pintar uno distinto. Va por dentro de la sesion
+              para poder usarse tambien en las pantallas con sesion. */}
+          <ProveedorDeDialogos>
+            <SafeAreaProvider>
+              <StatusBar style="light" />
+              {/* El fondo se pinta aca y no en cada pantalla para que no haya un
                 parpadeo blanco en las transiciones entre rutas. */}
-            <View className="flex-1 bg-fondo">
-              {fuentesListas ? (
-                <Stack
-                  screenOptions={{
-                    headerShown: false,
-                    contentStyle: { backgroundColor: '#0C0C13' },
-                    animation: 'slide_from_right',
-                  }}
-                />
-              ) : null}
-            </View>
-          </SafeAreaProvider>
+              <View className="flex-1 bg-fondo">
+                {fuentesListas ? (
+                  <Stack
+                    screenOptions={{
+                      headerShown: false,
+                      contentStyle: { backgroundColor: '#0C0C13' },
+                      animation: 'slide_from_right',
+                    }}
+                  />
+                ) : null}
+              </View>
+            </SafeAreaProvider>
+          </ProveedorDeDialogos>
         </ProveedorDeSesion>
       </QueryClientProvider>
     </trpc.Provider>

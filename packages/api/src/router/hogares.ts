@@ -48,7 +48,7 @@ export const hogaresRouter = router({
       }
     }
     // Inalcanzable: el for siempre retorna o relanza en la última vuelta.
-    throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'No se pudo crear el grupo.' });
+    throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'No se pudo crear el grupo. Probá de nuevo.' });
   }),
 
   /**
@@ -63,7 +63,7 @@ export const hogaresRouter = router({
   unirse: protectedProcedure.input(unirseHogarSchema).mutation(async ({ ctx, input }) => {
     const [hogar] = await ctx.db.select().from(hogares).where(eq(hogares.codigoInvitacion, input.codigo));
     if (!hogar) {
-      throw new TRPCError({ code: 'NOT_FOUND', message: 'Ese código no corresponde a ningún grupo.' });
+      throw new TRPCError({ code: 'NOT_FOUND', message: 'Ese código no existe.' });
     }
 
     if (await esMiembro(ctx.db, ctx.usuario.id, hogar.id)) {
