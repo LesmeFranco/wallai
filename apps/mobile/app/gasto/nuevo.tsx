@@ -27,13 +27,15 @@ import { trpc } from '../../lib/trpc';
 /**
  * Ejemplos que se muestran como atajos.
  *
- * Todos llevan "$" a proposito: el parser solo toma como monto un numero
- * marcado con "$" o con la palabra "pesos" (ver el comentario de alcance en
- * packages/validators/src/parser.ts). Un ejemplo sin el signo se guardaria mal
- * o seria rechazado, asi que los atajos tienen que ensenar la forma que
- * funciona.
+ * Ya no llevan "$": desde la 1.1.0 el parser toma como monto un numero que abra
+ * el texto, sin marcador. Los atajos ensenan la forma mas corta que funciona,
+ * porque es lo que la gente va a copiar; el "$" sigue valiendo y sigue ganando
+ * cuando esta (ver packages/validators/src/parser.ts).
+ *
+ * Uno lleva "ayer" a proposito, para que se vea que la fecha tambien se puede
+ * escribir dentro de la frase.
  */
-const EJEMPLOS = ['$30000 nafta Shell', '$15500 café y medialunas', '$8900 colectivo', '$45000 super Coto'];
+const EJEMPLOS = ['30000 nafta Shell', '15500 café y medialunas', '8900 colectivo ayer', '45000 super Coto'];
 
 type Estado = 'escribiendo' | 'guardado';
 
@@ -272,7 +274,7 @@ export default function NuevoGasto() {
               setTexto(valor);
               setError(null);
             }}
-            placeholder={'$30000 hamburguesa\nen Guido'}
+            placeholder={'30000 hamburguesa\nen Guido'}
             placeholderTextColor="#5A5A78"
             multiline
             autoFocus
@@ -282,8 +284,7 @@ export default function NuevoGasto() {
 
           {analisis.montoCentavos === null ? (
             <Text className="mt-2 font-cuerpo text-[13px] text-tenue">
-              Escribí el monto con $ adelante (o la palabra "pesos") y qué fue. Wallai lo categoriza
-              solo.
+              Empezá por el monto y seguí con qué fue. Wallai lo categoriza solo.
             </Text>
           ) : (
             <View className="mt-3 flex-row items-baseline gap-2">

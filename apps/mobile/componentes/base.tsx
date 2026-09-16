@@ -1,5 +1,6 @@
 import { ActivityIndicator, Pressable, Text, TextInput, View, type TextInputProps } from 'react-native';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
+import { IconoOjo } from './iconos';
 import { presentacionDe } from '../lib/categorias';
 
 /**
@@ -83,15 +84,55 @@ export function BotonSecundario({
   );
 }
 
-export function Campo({ etiqueta, className = '', ...props }: TextInputProps & { etiqueta?: string; className?: string }) {
+export function Campo({
+  etiqueta,
+  className = '',
+  secureTextEntry,
+  ...props
+}: TextInputProps & { etiqueta?: string; className?: string }) {
+  /**
+   * Si la contrasena se esta viendo o no.
+   *
+   * El boton aparece solo en los campos de contrasena, y arranca oculta: lo
+   * normal es escribirla sin que se vea, y el ojo esta para las veces que uno
+   * quiere confirmar que la tecleo bien. Sin esto, equivocarse en un caracter
+   * obligaba a borrar todo y escribir de nuevo a ciegas.
+   */
+  const [visible, setVisible] = useState(false);
+  const esContrasena = secureTextEntry === true;
+
   return (
     <View>
       {etiqueta ? <Etiqueta className="mb-2">{etiqueta}</Etiqueta> : null}
-      <TextInput
-        placeholderTextColor="#5A5A78"
-        className={`rounded-[14px] border-[1.5px] border-borde bg-campo px-[18px] py-4 font-cuerpo text-base text-primario ${className}`}
-        {...props}
-      />
+      <View className="relative justify-center">
+        <TextInput
+          placeholderTextColor="#5A5A78"
+          // El texto se oculta salvo que la persona haya pedido verlo.
+          secureTextEntry={esContrasena ? !visible : secureTextEntry}
+          className={`rounded-[14px] border-[1.5px] border-borde bg-campo py-4 pl-[18px] font-cuerpo text-base text-primario ${
+            // Espacio a la derecha solo cuando hay boton, para que el texto
+            // largo no se meta abajo del ojo.
+            esContrasena ? 'pr-[52px]' : 'pr-[18px]'
+          } ${className}`}
+          {...props}
+        />
+        {esContrasena ? (
+          <Pressable
+            onPress={() => setVisible(!visible)}
+            // hitSlop porque el icono mide 20px: sin agrandar el area tocable
+            // hay que apuntar demasiado con el pulgar.
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel={visible ? 'Ocultar la contraseña' : 'Mostrar la contraseña'}
+            // top/bottom en 0 mas justify-center centra el ojo verticalmente sin
+            // depender de la altura del campo, que cambia con el tamano de
+            // fuente del sistema.
+            className="absolute bottom-0 right-[18px] top-0 justify-center active:opacity-60"
+          >
+            <IconoOjo tachado={visible} />
+          </Pressable>
+        ) : null}
+      </View>
     </View>
   );
 }

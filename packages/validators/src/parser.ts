@@ -10,12 +10,29 @@ import { hoyArgentina, sumarDias } from './fechas';
  * ("hamburguesa en Guido"), sin el ruido del monto y la fecha en el medio.
  * Este archivo se encarga de separar esas dos cosas del resto.
  *
- * Alcance deliberadamente acotado para esta fase:
+ * Alcance:
  *  - Monto: reconoce un número (con o sin separador de miles/decimales, estilo
- *    argentino) que venga marcado con "$" o con la palabra "pesos"/"peso". Un
- *    número suelto sin ninguno de esos dos marcadores NO se toma como monto,
- *    a propósito: en una frase como "30000 hamburguesa" un monto suelto es
- *    indistinguible de cualquier otro número que aparezca en el texto.
+ *    argentino) en dos situaciones, en este orden de prioridad:
+ *
+ *      1. Marcado con "$" o con la palabra "pesos"/"peso", esté donde esté.
+ *      2. Sin marcar, pero **al principio del texto**: "30000 nafta".
+ *
+ *    La segunda se agregó en la 1.1.0. Hasta entonces un número suelto no se
+ *    tomaba nunca, con el argumento de que en "30000 hamburguesa" es
+ *    indistinguible de cualquier otro número de la frase. El argumento sigue
+ *    siendo cierto en general, pero no para el número que ABRE el texto: nadie
+ *    empieza a describir un gasto con una cantidad que no sea la plata. Y pesa
+ *    más la prioridad número uno del producto, que es que cargar un gasto sea
+ *    más simple que escribir un WhatsApp: pedir el "$" era la fricción que más
+ *    se sentía usando la app todos los días.
+ *
+ *    Un número que no abre el texto y no está marcado se sigue ignorando: en
+ *    "cafe con 2 medialunas", el 2 no es plata.
+ *
+ *    El marcador gana sobre la posición, para que "2 empanadas $3000" cargue
+ *    3000 y no 2. Y el número del principio tiene que estar solo (seguido de
+ *    espacio, fin, o un signo de puntuación), asi que "1/2 kilo de asado" y
+ *    "2x1 cerveza" no se leen como monto.
  *  - No interpreta montos en palabras ("treinta mil pesos"): son un
  *    problema de NLP bastante más grande y el documento no lo pide para el
  *    MVP.
@@ -81,13 +98,32 @@ const PATRONES_MONTO = [
   new RegExp(String.raw`\bpesos?\s*(${NUMERO})`, 'i'),
 ];
 
+/**
+ * Un número que abre el texto, sin ningún marcador: "30000 nafta Shell".
+ *
+ * El `(?=\s|$|[,;:])` es lo que impide leer como monto la primera parte de una
+ * cantidad que no es plata: en "1/2 kilo de asado" o "2x1 cerveza", al número
+ * le sigue una letra o una barra, así que no coincide. Sin esa condición, esos
+ * gastos se guardarían por $1 y $2.
+ */
+const MONTO_AL_PRINCIPIO = new RegExp(String.raw`^\s*(${NUMERO})(?=\s|$|[,;:])`);
+
 function buscarMonto(texto: string): { valor: number; coincidencia: string } | null {
+  // Los marcadores explícitos van primero: si la persona se tomó el trabajo de
+  // escribir "$" o "pesos", eso es el monto, esté donde esté. Así
+  // "2 empanadas $3000" carga 3000 y no 2.
   for (const patron of PATRONES_MONTO) {
     const coincidencia = patron.exec(texto);
     if (coincidencia) {
       return { valor: interpretarNumero(coincidencia[1]!), coincidencia: coincidencia[0] };
     }
   }
+
+  const alPrincipio = MONTO_AL_PRINCIPIO.exec(texto);
+  if (alPrincipio) {
+    return { valor: interpretarNumero(alPrincipio[1]!), coincidencia: alPrincipio[0] };
+  }
+
   return null;
 }
 
