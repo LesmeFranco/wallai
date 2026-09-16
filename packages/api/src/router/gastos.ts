@@ -69,7 +69,9 @@ export const gastosRouter = router({
     if (montoCentavos === null) {
       throw new TRPCError({
         code: 'BAD_REQUEST',
-        message: 'No encontré ningún monto en el texto. Probá algo como "500 pesos" o "$500".',
+        // El ejemplo enseña la forma más corta que funciona, que es con la que
+        // conviene que la persona se quede: el monto abriendo el texto.
+        message: 'No encontré ningún monto en el texto. Empezá por el monto, como "500 café".',
       });
     }
 
