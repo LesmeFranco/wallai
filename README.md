@@ -23,10 +23,11 @@
 Una app de gastos para una familia. La carga es una sola frase:
 
 ```
-$30000 hamburguesa en Guido
+30000 hamburguesa en Guido
 ```
 
-De ahi el sistema saca el monto, la fecha si la mencionaste, y le asigna una
+De ahi el sistema saca el monto (el numero que abre el texto, o cualquiera
+marcado con "$" o "pesos"), la fecha si la mencionaste, y le asigna una
 categoria. Cuando se equivoca, la corregis una vez y no se vuelve a equivocar
 con textos parecidos: esa correccion queda guardada y beneficia a todo el grupo.
 
@@ -55,17 +56,14 @@ tenia dos servidores prendidos y el telefono estaba en la misma Wi-Fi.
 | 4.1 | Deploy del backend en Vercel y build de Android con EAS | Completa |
 | 4.2 | Objetivos de gasto, notificaciones, pulido de UI | Pendiente |
 
-La version instalada es la **1.1.0**, que trajo lo que se noto usando la app
-todos los dias: el selector de que gastos se miran sin la vista que mezclaba lo
-propio con lo de los demas, la correccion de categoria con un paso de confirmar,
-y el login con Google funcionando.
+La version instalada es la **1.2.0**. Lo que trajeron las dos ultimas salio
+entero de usar la app todos los dias: el selector de que gastos se miran sin la
+vista que mezclaba lo propio con lo de los demas, la correccion de categoria con
+un paso de confirmar, el login con Google funcionando, el monto sin necesidad de
+escribir "$" adelante, y el ojo para ver la contrasena al escribirla.
 
 Lo que queda, en orden de cuanto se nota al usarla:
 
-- **El parser pide `$` o la palabra "pesos" antes del monto.** `$30000 nafta` se
-  reconoce; `30000 nafta` no. Es un limite deliberado (un numero suelto es
-  indistinguible de cualquier otro numero de la frase), pero es la friccion que
-  mas se siente al cargar gastos todos los dias.
 - **Objetivos de gasto**, la tabla existe desde la fase 1 pero no tiene ni
   backend ni pantalla.
 - **Notificaciones push**, que son el resto de la fase 4.2.
