@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert, Pressable, ScrollView, Share, Text, View } from 'react-native';
+import { Pressable, ScrollView, Share, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
@@ -11,6 +11,7 @@ import {
   MensajeError,
   Tarjeta,
 } from '../../componentes/base';
+import { useDialogos } from '../../componentes/Dialogo';
 import { IconoCopiar } from '../../componentes/iconos';
 import { formatearPesosCorto } from '../../lib/formato';
 import { presentacionDeGrupo } from '../../lib/grupos';
@@ -120,6 +121,7 @@ export default function PantallaGrupos() {
 function TarjetaDeGrupo({ grupo }: { grupo: Grupo }) {
   const [copiado, setCopiado] = useState(false);
   const utils = trpc.useUtils();
+  const { confirmar, avisar } = useDialogos();
   const presentacion = presentacionDeGrupo(grupo.tipo);
 
   // El resumen del grupo, para mostrar cuánto lleva gastado cada integrante
@@ -138,29 +140,26 @@ function TarjetaDeGrupo({ grupo }: { grupo: Grupo }) {
       void utils.gastos.listar.invalidate();
       void utils.categorias.listar.invalidate();
     },
-    onError: (problema) => Alert.alert('No se pudo salir', problema.message),
+    onError: (problema) => void avisar({ titulo: 'No se pudo salir', mensaje: problema.message }),
   });
 
   const totalPorUsuario = new Map(
     resumen.data?.porPersona.map((fila) => [fila.usuarioId, fila.totalCentavos]) ?? [],
   );
 
-  function confirmarSalida() {
+  async function confirmarSalida() {
     const esElUltimo = grupo.miembros.length <= 1;
-    Alert.alert(
-      `¿Salir de ${grupo.nombre}?`,
-      esElUltimo
-        ? `Sos el único integrante, así que ${presentacion.singular === 'hogar' ? 'el hogar' : 'el grupo'} se va a eliminar. Los gastos que cargaste vuelven a ser privados tuyos, pero se pierden las categorías que aprendió.`
-        : `Vas a dejar de ver los gastos que cargaron los demás en ${grupo.nombre}. Los tuyos los seguís viendo en "Solo yo".`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Salir',
-          style: 'destructive',
-          onPress: () => salirDelGrupo.mutate({ hogarId: grupo.id }),
-        },
-      ],
-    );
+    const seguro = await confirmar({
+      titulo: `¿Salir de ${grupo.nombre}?`,
+      // Los dos textos dicen lo que se pierde, que no es lo mismo en cada
+      // caso y no es obvio en ninguno de los dos.
+      mensaje: esElUltimo
+        ? `Sos el único integrante, así que ${presentacion.singular === 'hogar' ? 'el hogar' : 'el grupo'} se elimina. Tus gastos vuelven a ser privados y se pierde lo que el motor aprendió acá.`
+        : `Dejás de ver los gastos de los demás. Los tuyos los seguís viendo en "Mis gastos".`,
+      confirmar: 'Salir',
+      destructivo: true,
+    });
+    if (seguro) salirDelGrupo.mutate({ hogarId: grupo.id });
   }
 
   async function copiarCodigo() {
@@ -262,7 +261,7 @@ function TarjetaDeGrupo({ grupo }: { grupo: Grupo }) {
       </Text>
 
       <Pressable
-        onPress={confirmarSalida}
+        onPress={() => void confirmarSalida()}
         disabled={salirDelGrupo.isPending}
         className="mt-4 items-center rounded-boton border-[1.5px] border-coral/30 py-3 active:opacity-70"
       >

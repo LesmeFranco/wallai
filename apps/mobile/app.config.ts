@@ -27,12 +27,14 @@ const config: ExpoConfig = {
    * 1.0.0 fue el primer build instalable. 1.1.0 trajo el selector de alcance sin
    * la vista mezclada, la correccion de categoria con confirmacion y el login
    * con Google atendiendo el deep link de vuelta. 1.2.0 saca la necesidad de
-   * escribir "$" antes del monto y agrega el ojo para ver la contrasena.
+   * escribir "$" antes del monto y agrega el ojo para ver la contrasena. 1.3.0
+   * reemplaza los cuadros nativos de Android por dialogos con el estilo de la
+   * app, y acorta los mensajes de error.
    *
    * Subirla no es tramite: es lo unico que permite mirar el telefono y saber
    * cual de los APK quedo instalado.
    */
-  version: '1.2.0',
+  version: '1.3.0',
   orientation: 'portrait',
   icon: './assets/icon.png',
   scheme: 'wallai',
@@ -56,7 +58,7 @@ const config: ExpoConfig = {
      * `version`, que es el texto que ve la persona. El primer build no lo
      * declaraba y quedo en 1.
      */
-    versionCode: 3,
+    versionCode: 4,
     adaptiveIcon: {
       backgroundColor: '#0C0C13',
       foregroundImage: './assets/android-icon-foreground.png',

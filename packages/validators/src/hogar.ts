@@ -19,7 +19,7 @@ export const tipoHogarSchema = z.enum(TIPOS_HOGAR);
 export type TipoHogar = z.infer<typeof tipoHogarSchema>;
 
 export const crearHogarSchema = z.object({
-  nombre: z.string().trim().min(1, 'Poné un nombre para el hogar').max(NOMBRE_HOGAR_MAXIMO),
+  nombre: z.string().trim().min(1, 'Poné un nombre.').max(NOMBRE_HOGAR_MAXIMO),
   /** Si no viene, es una casa: es el caso mas comun y el unico que existia antes. */
   tipo: tipoHogarSchema.default('casa'),
 });
@@ -38,7 +38,7 @@ export const unirseHogarSchema = z.object({
     .string()
     .trim()
     .transform(normalizarCodigoInvitacion)
-    .pipe(z.string().regex(CODIGO_INVITACION_REGEX, 'Ese código no tiene el formato esperado')),
+    .pipe(z.string().regex(CODIGO_INVITACION_REGEX, 'El código son 6 letras y números.')),
 });
 
 export type UnirseHogarInput = z.infer<typeof unirseHogarSchema>;

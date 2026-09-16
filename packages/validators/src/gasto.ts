@@ -57,12 +57,12 @@ export const fechaSchema = z.iso.date();
  * gasto no cuente en la casa por un olvido es peor que el caso contrario.
  */
 export const crearGastoSchema = z.object({
-  texto: z.string().trim().min(1, 'Escribi que gastaste').max(TEXTO_MAXIMO),
+  texto: z.string().trim().min(1, 'Escribí qué gastaste.').max(TEXTO_MAXIMO),
   montoCentavos: z
     .number()
     .int('El monto se guarda en centavos enteros')
     .positive('El monto tiene que ser mayor a cero')
-    .max(MONTO_MAXIMO_CENTAVOS, 'Ese monto parece un error de tipeo')
+    .max(MONTO_MAXIMO_CENTAVOS, 'Ese monto es demasiado grande.')
     .optional(),
   categoriaId: z.uuid().optional(),
   /** Si no viene, se intenta sacar del texto; si tampoco, el servidor usa hoy. */
@@ -111,7 +111,7 @@ export const editarGastoSchema = z
       .number()
       .int('El monto se guarda en centavos enteros')
       .positive('El monto tiene que ser mayor a cero')
-      .max(MONTO_MAXIMO_CENTAVOS, 'Ese monto parece un error de tipeo')
+      .max(MONTO_MAXIMO_CENTAVOS, 'Ese monto es demasiado grande.')
       .optional(),
     fecha: fechaSchema.optional(),
     categoriaId: z.uuid().optional(),
@@ -121,7 +121,7 @@ export const editarGastoSchema = z
       datos.montoCentavos !== undefined ||
       datos.fecha !== undefined ||
       datos.categoriaId !== undefined,
-    { message: 'No hay nada que cambiar' },
+    { message: 'No hay nada que cambiar.' },
   );
 
 export type EditarGastoInput = z.infer<typeof editarGastoSchema>;
