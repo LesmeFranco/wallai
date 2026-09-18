@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { centavosAPesos, pesosACentavos } from '@wallai/validators';
 import { useDialogos } from './Dialogo';
 import { BotonPrimario, Etiqueta, MensajeError, PastillaCategoria } from './base';
@@ -33,6 +34,7 @@ export function EditorDeGasto({
   esMio: boolean;
   onCerrar: () => void;
 }) {
+  const insets = useSafeAreaInsets();
   const utils = trpc.useUtils();
   const { confirmar } = useDialogos();
   const categorias = trpc.categorias.listar.useQuery();
@@ -104,7 +106,15 @@ export function EditorDeGasto({
           persona espera de una hoja que sube desde abajo. */}
       <Pressable className="flex-1 bg-black/60" onPress={onCerrar} />
 
-      <View className="rounded-t-[28px] border-t border-borde bg-superficie px-6 pb-10 pt-6">
+      {/* El margen de abajo suma lo que el sistema se reserve: con edge-to-edge
+          la hoja llega hasta el borde real de la pantalla, asi que en un
+          telefono con los tres botones de Android (~48px) el ultimo boton
+          quedaba debajo de ellos. Con gestos (~16px) el error existia igual
+          pero casi no se veia. */}
+      <View
+        className="rounded-t-[28px] border-t border-borde bg-superficie px-6 pt-6"
+        style={{ paddingBottom: 40 + insets.bottom }}
+      >
         <View className="mb-5">
           <Etiqueta>{esMio ? 'Corregir gasto' : 'Detalle del gasto'}</Etiqueta>
           <Text className="mt-1.5 font-cuerpo-semi text-[17px] text-primario">

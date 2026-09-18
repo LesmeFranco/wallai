@@ -1,6 +1,7 @@
 import { categoriasRouter } from './router/categorias';
 import { gastosRouter } from './router/gastos';
 import { hogaresRouter } from './router/hogares';
+import { objetivosRouter } from './router/objetivos';
 import { publicProcedure, router } from './trpc';
 
 export const appRouter = router({
@@ -20,6 +21,7 @@ export const appRouter = router({
   gastos: gastosRouter,
   hogares: hogaresRouter,
   categorias: categoriasRouter,
+  objetivos: objetivosRouter,
 });
 
 export type AppRouter = typeof appRouter;

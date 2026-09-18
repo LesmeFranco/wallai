@@ -13,6 +13,9 @@
         "SUPABASE_URL": "https://xnogbfaghnkdigoussre.supabase.co",
         "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhub2diZmFnaG5rZGlnb3Vzc3JlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg5MDc0NzAsImV4cCI6MjEwNDQ4MzQ3MH0.qCOyehsLr2dVzFc_DELS9L_PQEyofLl3b1MUOEFupKQ",
         "WALLAI_URL_API": "https://wallai-three.vercel.app"
+      },
+      "ios": {
+        "simulator": true
       }
     },
     "production": {

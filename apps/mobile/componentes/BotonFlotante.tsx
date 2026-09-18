@@ -18,13 +18,18 @@ export function BotonFlotante() {
       accessibilityLabel="Cargar un gasto"
       className="absolute bottom-6 right-5 h-[60px] w-[60px] items-center justify-center rounded-[20px] bg-lima active:scale-[0.93]"
       style={{
-        // La sombra tenida del color del boton es del mockup: lo despega del
-        // fondo oscuro sin necesidad de un borde.
-        shadowColor: '#AAFF4D',
-        shadowOpacity: 0.35,
-        shadowRadius: 16,
-        shadowOffset: { width: 0, height: 8 },
-        elevation: 8,
+        /**
+         * La sombra tenida del color del boton es del mockup: lo despega del
+         * fondo oscuro sin necesidad de un borde.
+         *
+         * Va como `boxShadow` y no como las cuatro propiedades `shadow*` de
+         * antes porque esas son SOLO de iOS: en Android la sombra se pide con
+         * `elevation`, que no acepta color y dibuja una sombra negra. O sea que
+         * el resplandor lima se veia en iPhone y en Android no se veia nada.
+         * `boxShadow` existe en React Native desde la 0.76 con la arquitectura
+         * nueva (que es el default del SDK 57) y se dibuja igual en los dos.
+         */
+        boxShadow: '0px 8px 16px rgba(170, 255, 77, 0.35)',
       }}
     >
       <IconoMas />

@@ -1,10 +1,24 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { hoyArgentina, rangoMesActual, sumarDias, type Alcance } from '@wallai/validators';
+import {
+  calcularProgresoObjetivo,
+  hoyArgentina,
+  rangoMesActual,
+  sumarDias,
+  type Alcance,
+} from '@wallai/validators';
 import { BotonFlotante } from '../../componentes/BotonFlotante';
-import { Cargando, Etiqueta, IconoCategoria, MensajeError, Tarjeta } from '../../componentes/base';
+import {
+  Cargando,
+  Etiqueta,
+  IconoCategoria,
+  MAX_ESCALA_MONTO,
+  MensajeError,
+  Tarjeta,
+} from '../../componentes/base';
+import { Objetivo } from '../../componentes/Objetivo';
 import {
   DescripcionDeAlcance,
   SelectorDeAlcance,
@@ -12,6 +26,7 @@ import {
 } from '../../componentes/SelectorDeAlcance';
 import { presentacionDe } from '../../lib/categorias';
 import { formatearPesosCorto, formatearPesosSinCentavos } from '../../lib/formato';
+import { reprogramarAvisos } from '../../lib/notificaciones';
 import { trpc } from '../../lib/trpc';
 
 type Periodo = 'este' | 'anterior';
@@ -44,6 +59,65 @@ export default function Dashboard() {
   const categorias = trpc.categorias.listar.useQuery();
   /** Los ultimos gastos, para las tarjetas de "ultimo gasto" y "hoy". */
   const ultimos = trpc.gastos.listar.useQuery({ limite: 20, alcance });
+
+  /**
+   * El aviso de la noche se vuelve a programar cada vez que esta pantalla toma
+   * foco, que en la practica es cada vez que se abre la app o se vuelve del
+   * alta de un gasto.
+   *
+   * POR QUE ACA Y NO EN UN LUGAR PROPIO: el texto del aviso depende de si la
+   * persona cargo algo hoy y de como viene el objetivo, y las dos cosas ya
+   * estan pedidas en esta pantalla. Hacerlo en otro lado significaria repetir
+   * las mismas dos consultas.
+   *
+   * Solo se programa mirando "Mis gastos" de este mes, que es el estado por
+   * defecto del dashboard: el aviso es sobre la billetera de la persona, no
+   * sobre un grupo puntual que haya quedado seleccionado.
+   *
+   * Las dependencias son todas valores sueltos (strings, numeros, booleanos) y
+   * no objetos a proposito: con un objeto, cada render crearia uno nuevo, el
+   * efecto se volveria a disparar en cada render y la app estaria cancelando y
+   * reprogramando notificaciones todo el tiempo.
+   */
+  const hoyISO = hoyArgentina();
+  const esLaVistaDelAviso = alcance.tipo === 'mio' && periodo === 'este';
+  const cargoHoy = (ultimos.data?.gastos ?? []).some((gasto) => gasto.fecha === hoyISO);
+  const totalDelMes = resumen.data?.totalCentavos ?? null;
+  const limiteDelMes = resumen.data?.objetivo?.montoLimiteCentavos ?? null;
+  const desdeDelResumen = resumen.data?.desde ?? null;
+  const hastaDelResumen = resumen.data?.hasta ?? null;
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!esLaVistaDelAviso) return;
+      if (totalDelMes === null || desdeDelResumen === null || hastaDelResumen === null) return;
+
+      const progreso =
+        limiteDelMes === null
+          ? null
+          : calcularProgresoObjetivo({
+              gastadoCentavos: totalDelMes,
+              limiteCentavos: limiteDelMes,
+              desde: desdeDelResumen,
+              hasta: hastaDelResumen,
+              hoy: hoyISO,
+            });
+
+      void reprogramarAvisos({
+        cargoHoy,
+        progreso,
+        mes: desdeDelResumen.slice(0, 7),
+      });
+    }, [
+      esLaVistaDelAviso,
+      cargoHoy,
+      totalDelMes,
+      limiteDelMes,
+      desdeDelResumen,
+      hastaDelResumen,
+      hoyISO,
+    ]),
+  );
 
   if (resumen.isPending) return <Cargando />;
 
@@ -123,9 +197,28 @@ export default function Dashboard() {
       >
         <Tarjeta className="mb-3 px-6 pb-5 pt-6">
           <Etiqueta>Total del mes</Etiqueta>
-          <Text className="mt-2 font-display-extra text-[44px] leading-none tracking-tighter text-lima">
+          {/* El tope de escala esta en todos los montos de la app: sin el, un
+              telefono con la letra del sistema en grande parte el numero en dos
+              renglones y lo corta contra el borde de la tarjeta. */}
+          <Text
+            className="mt-2 font-display-extra text-[44px] leading-none tracking-tighter text-lima"
+            maxFontSizeMultiplier={MAX_ESCALA_MONTO}
+            adjustsFontSizeToFit
+            numberOfLines={1}
+          >
             {formatearPesosSinCentavos(total)}
           </Text>
+          {/* El objetivo es opcional: si no hay ninguno, esto es una linea gris
+              para ponerlo, y nada mas. El componente decide que dibujar. */}
+          <Objetivo
+            objetivo={resumen.data.objetivo}
+            gastadoCentavos={total}
+            desde={resumen.data.desde}
+            hasta={resumen.data.hasta}
+            alcance={alcance}
+            periodoEnCurso={periodo === 'este'}
+          />
+
           <Text className="mt-3 font-cuerpo text-xs text-secundario">
             {resumen.data.porPersona.length > 0
               ? `${resumen.data.porCategoria.length} categorías · ${resumen.data.porPersona.length} ${
@@ -141,7 +234,11 @@ export default function Dashboard() {
             {ultimoGasto ? (
               <View className="mt-3">
                 <IconoCategoria clave={claveDeCategoria.get(ultimoGasto.categoriaId) ?? null} tamano={36} />
-                <Text className="mt-2.5 font-display text-xl tracking-tight text-primario">
+                <Text
+                  className="mt-2.5 font-display text-xl tracking-tight text-primario"
+                  maxFontSizeMultiplier={MAX_ESCALA_MONTO}
+                  numberOfLines={1}
+                >
                   {formatearPesosCorto(ultimoGasto.montoCentavos)}
                 </Text>
                 <Text className="mt-0.5 font-cuerpo text-xs text-secundario" numberOfLines={1}>
@@ -155,7 +252,11 @@ export default function Dashboard() {
 
           <Tarjeta className="flex-1 px-4 py-[18px]">
             <Etiqueta>Hoy</Etiqueta>
-            <Text className="mt-3 font-display text-xl tracking-tight text-lima">
+            <Text
+              className="mt-3 font-display text-xl tracking-tight text-lima"
+              maxFontSizeMultiplier={MAX_ESCALA_MONTO}
+              numberOfLines={1}
+            >
               {formatearPesosSinCentavos(totalDeHoy)}
             </Text>
             <Text className="mt-0.5 font-cuerpo text-xs text-secundario">
@@ -186,7 +287,10 @@ export default function Dashboard() {
                         <Text className="text-lg">{icono}</Text>
                         <Text className="font-cuerpo-medio text-sm text-primario">{fila.nombre}</Text>
                       </View>
-                      <Text className="font-display text-[15px] text-primario">
+                      <Text
+                        className="font-display text-[15px] text-primario"
+                        maxFontSizeMultiplier={MAX_ESCALA_MONTO}
+                      >
                         {formatearPesosCorto(fila.totalCentavos)}
                       </Text>
                     </View>
@@ -236,7 +340,11 @@ export default function Dashboard() {
                   >
                     {fila.nombre}
                   </Text>
-                  <Text className="text-center font-display text-sm tracking-tight text-lima">
+                  <Text
+                    className="text-center font-display text-sm tracking-tight text-lima"
+                    maxFontSizeMultiplier={MAX_ESCALA_MONTO}
+                    numberOfLines={1}
+                  >
                     {formatearPesosCorto(fila.totalCentavos)}
                   </Text>
                 </View>

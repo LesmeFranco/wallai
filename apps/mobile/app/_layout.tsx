@@ -1,10 +1,11 @@
 import '../global.css';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import * as SplashScreen from 'expo-splash-screen';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useFonts } from 'expo-font';
 import { Outfit_600SemiBold, Outfit_700Bold, Outfit_800ExtraBold } from '@expo-google-fonts/outfit';
@@ -12,6 +13,21 @@ import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold } from '@expo-goog
 import { ProveedorDeDialogos } from '../componentes/Dialogo';
 import { ProveedorDeSesion } from '../lib/sesion';
 import { crearClienteTrpc, trpc } from '../lib/trpc';
+
+/**
+ * El splash se queda hasta que las fuentes esten listas.
+ *
+ * Sin esto, Expo lo saca solo apenas arranca el runtime de JavaScript, que es
+ * antes de que `useFonts` termine de cargar Outfit e Inter. Como mientras tanto
+ * no se dibuja ninguna pantalla (ver el `fuentesListas` de abajo), quedaban
+ * unos cuadros de fondo vacio entre el logo y el primer contenido: en un
+ * telefono rapido es un parpadeo y en uno lento parece que la app se colgo.
+ *
+ * `catch` vacio a proposito: si el splash ya se cerro solo, la promesa se
+ * rechaza y no hay nada que hacer al respecto. Una app que no arranca por no
+ * poder retener su pantalla de carga seria mucho peor que el parpadeo.
+ */
+void SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export default function LayoutRaiz() {
   const [fuentesListas] = useFonts({
@@ -22,6 +38,10 @@ export default function LayoutRaiz() {
     Inter_500Medium,
     Inter_600SemiBold,
   });
+
+  useEffect(() => {
+    if (fuentesListas) void SplashScreen.hideAsync().catch(() => {});
+  }, [fuentesListas]);
 
   /**
    * Los clientes se crean una sola vez, con useState y no en el cuerpo del

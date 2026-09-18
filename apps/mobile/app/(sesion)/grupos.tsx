@@ -11,6 +11,7 @@ import {
   MensajeError,
   Tarjeta,
 } from '../../componentes/base';
+import { AvisoDeLaNoche } from '../../componentes/AvisoDeLaNoche';
 import { useDialogos } from '../../componentes/Dialogo';
 import { IconoCopiar } from '../../componentes/iconos';
 import { formatearPesosCorto } from '../../lib/formato';
@@ -69,6 +70,10 @@ export default function PantallaGrupos() {
           </View>
         </View>
 
+        <View className="px-5">
+          <AvisoDeLaNoche />
+        </View>
+
         <Pressable onPress={() => void salir()} className="items-center pb-6">
           <Text className="font-cuerpo text-[13px] text-tenue">Cerrar sesión</Text>
         </Pressable>
@@ -100,6 +105,10 @@ export default function PantallaGrupos() {
           >
             <Text className="font-cuerpo-semi text-sm text-lima">Sumarme con un código</Text>
           </Pressable>
+        </View>
+
+        <View className="mt-6">
+          <AvisoDeLaNoche />
         </View>
 
         <Pressable onPress={() => void salir()} className="items-center py-4">

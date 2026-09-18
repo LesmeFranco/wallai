@@ -42,3 +42,24 @@ export function rangoMesActual(): { desde: string; hasta: string } {
   const hasta = `${anio}-${String(mes).padStart(2, '0')}-${String(ultimoDia).padStart(2, '0')}`;
   return { desde, hasta };
 }
+
+/**
+ * Cuántos días enteros hay entre dos fechas ISO, contando el primero como cero.
+ * `diasEntre('2026-09-01', '2026-09-10')` da 9.
+ *
+ * Existe para la proyección del objetivo de gasto ("a este ritmo terminás el
+ * mes en X"), que necesita saber cuántos días del período ya pasaron y cuántos
+ * tiene el período entero.
+ *
+ * Trabaja en UTC por el mismo motivo que `sumarDias`: una vez que se tiene el
+ * día, no hace falta ningún huso horario, y así ningún cambio de hora del
+ * proceso parte un día por la mitad.
+ */
+export function diasEntre(desdeISO: string, hastaISO: string): number {
+  const aUTC = (fechaISO: string) => {
+    const [anio, mes, dia] = fechaISO.split('-').map(Number) as [number, number, number];
+    return Date.UTC(anio, mes - 1, dia);
+  };
+  const MILISEGUNDOS_POR_DIA = 24 * 60 * 60 * 1000;
+  return Math.round((aUTC(hastaISO) - aUTC(desdeISO)) / MILISEGUNDOS_POR_DIA);
+}

@@ -57,6 +57,25 @@ export {
 
 export { normalizarTexto } from './texto';
 
-export { hoyArgentina, rangoMesActual, sumarDias } from './fechas';
+export { diasEntre, hoyArgentina, rangoMesActual, sumarDias } from './fechas';
+
+export {
+  HORA_DEL_AVISO,
+  armarAvisoDiario,
+  fechaDelAviso,
+  type AvisoDiario,
+} from './avisoDiario';
+
+export {
+  PERIODO_OBJETIVO,
+  UMBRAL_CERCA,
+  calcularProgresoObjetivo,
+  fijarObjetivoSchema,
+  quitarObjetivoSchema,
+  type EstadoObjetivo,
+  type FijarObjetivoInput,
+  type ProgresoObjetivo,
+  type QuitarObjetivoInput,
+} from './objetivo';
 
 export { parsearTexto, type ResultadoParseo } from './parser';
