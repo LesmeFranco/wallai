@@ -6,7 +6,7 @@ import { BotonFlotante } from '../../componentes/BotonFlotante';
 import { EditorDeGasto } from '../../componentes/EditorDeGasto';
 import { useDialogos } from '../../componentes/Dialogo';
 import { SelectorDeAlcance } from '../../componentes/SelectorDeAlcance';
-import { Cargando, IconoCategoria, MensajeError, Tarjeta } from '../../componentes/base';
+import { Cargando, IconoCategoria, MAX_ESCALA_MONTO, MensajeError, Tarjeta } from '../../componentes/base';
 import { IconoBorrar, IconoBuscar, IconoCandado } from '../../componentes/iconos';
 import { useSesion } from '../../lib/sesion';
 import { capitalizar, formatearDiaLargo, formatearPesosCorto, formatearPesosSinCentavos } from '../../lib/formato';
@@ -146,7 +146,10 @@ export default function Historial() {
                 <Text className="font-cuerpo-semi text-[13px] text-secundario">
                   {capitalizar(formatearDiaLargo(fecha))}
                 </Text>
-                <Text className="font-display text-[15px] text-primario">
+                <Text
+                  className="font-display text-[15px] text-primario"
+                  maxFontSizeMultiplier={MAX_ESCALA_MONTO}
+                >
                   {formatearPesosSinCentavos(
                     delDia.reduce((suma, gasto) => suma + gasto.montoCentavos, 0),
                   )}
@@ -193,7 +196,11 @@ export default function Historial() {
                             ) : null}
                           </View>
                         </View>
-                        <Text className="font-display text-lg tracking-tight text-primario">
+                        <Text
+                          className="font-display text-lg tracking-tight text-primario"
+                          maxFontSizeMultiplier={MAX_ESCALA_MONTO}
+                          numberOfLines={1}
+                        >
                           {formatearPesosCorto(gasto.montoCentavos)}
                         </Text>
                         {esMio ? (

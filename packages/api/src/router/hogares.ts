@@ -2,6 +2,7 @@ import { TRPCError } from '@trpc/server';
 import { and, asc, eq, gte, inArray, lte, sql } from 'drizzle-orm';
 import { categorias, gastos, hogares, usuarioHogar, usuarios } from '@wallai/db';
 import {
+  ALCANCE_POR_DEFECTO,
   crearHogarSchema,
   generarCodigoInvitacion,
   rangoMesActual,
@@ -10,6 +11,7 @@ import {
   unirseHogarSchema,
 } from '@wallai/validators';
 import { esMiembro, esViolacionDeUnicidad, obtenerHogaresIds } from '../hogar';
+import { obtenerObjetivoDelAlcance } from '../objetivo';
 import { construirFiltroDeVisibilidad } from '../visibilidad';
 import { protectedProcedure, router } from '../trpc';
 
@@ -246,10 +248,33 @@ export const hogaresRouter = router({
       .groupBy(categorias.id, categorias.nombre)
       .orderBy(sql`sum(${gastos.montoCentavos}) desc`);
 
+    /**
+     * El objetivo viaja con el resumen y no en una consulta aparte a proposito.
+     *
+     * El limite y lo gastado tienen que salir del MISMO alcance: si la pantalla
+     * pidiera el objetivo por su cuenta, alcanzaria con que las dos consultas
+     * se resolvieran en distinto orden al cambiar de pastilla para que la barra
+     * mostrara, por un instante, el gasto de una vista contra el limite de
+     * otra. Un porcentaje mal aunque sea un segundo es suficiente para
+     * desconfiar del numero.
+     *
+     * Con `usuarioId` no se devuelve ninguno: el total pasa a ser el de una
+     * sola persona dentro del grupo, y el objetivo del grupo mide otra cosa
+     * (lo que gastan todos). Compararlos daria un porcentaje que parece bueno
+     * y no significa nada.
+     */
+    const objetivo = input.usuarioId
+      ? null
+      : await obtenerObjetivoDelAlcance(ctx.db, ctx.usuario.id, input.alcance ?? ALCANCE_POR_DEFECTO);
+
     return {
       desde,
       hasta,
       totalCentavos: Number(total!.totalCentavos),
+      objetivo: objetivo && {
+        id: objetivo.id,
+        montoLimiteCentavos: Number(objetivo.montoLimiteCentavos),
+      },
       porPersona: porPersona.map((fila) => ({ ...fila, totalCentavos: Number(fila.totalCentavos) })),
       porCategoria: porCategoria.map((fila) => ({ ...fila, totalCentavos: Number(fila.totalCentavos) })),
     };

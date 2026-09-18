@@ -22,6 +22,7 @@ import {
 import { IconoTilde, IconoVolver } from '../../componentes/iconos';
 import { formatearPesosSinCentavos } from '../../lib/formato';
 import { presentacionDeGrupo } from '../../lib/grupos';
+import { pedirPermisoTrasElPrimerGasto } from '../../lib/notificaciones';
 import { trpc } from '../../lib/trpc';
 
 /**
@@ -103,6 +104,16 @@ export default function NuevoGasto() {
       // volver ya estén con el gasto nuevo incluido.
       void utils.hogares.resumen.invalidate();
       void utils.gastos.listar.invalidate();
+      /**
+       * El momento de pedir el permiso de notificaciones: recien despues del
+       * primer gasto cargado, nunca al abrir la app por primera vez.
+       *
+       * Un permiso pedido en frio, antes de que la persona haya visto para que
+       * sirve la app, se rechaza casi siempre, y en Android y en iOS ese
+       * rechazo es definitivo: la app no puede volver a preguntar. La funcion
+       * se encarga de no insistir si ya hubo respuesta alguna vez.
+       */
+      void pedirPermisoTrasElPrimerGasto();
     },
     onError: (problema) => setError(problema.message),
   });

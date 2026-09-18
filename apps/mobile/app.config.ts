@@ -29,18 +29,27 @@ const config: ExpoConfig = {
    * con Google atendiendo el deep link de vuelta. 1.2.0 saca la necesidad de
    * escribir "$" antes del monto y agrega el ojo para ver la contrasena. 1.3.0
    * reemplaza los cuadros nativos de Android por dialogos con el estilo de la
-   * app, y acorta los mensajes de error.
+   * app, y acorta los mensajes de error. 1.4.0 cierra la fase 4.2: objetivos de
+   * gasto, el aviso de la noche, y el pulido que hacia que la app se viera
+   * distinta segun el telefono.
    *
    * Subirla no es tramite: es lo unico que permite mirar el telefono y saber
    * cual de los APK quedo instalado.
    */
-  version: '1.3.0',
+  version: '1.4.0',
   orientation: 'portrait',
   icon: './assets/icon.png',
   scheme: 'wallai',
   userInterfaceStyle: 'dark',
   ios: {
-    supportsTablet: true,
+    /**
+     * La app esta disenada para un telefono en vertical: una sola columna,
+     * tarjetas al ancho de la pantalla y el boton de cargar al alcance del
+     * pulgar. Estirada a un iPad queda una columna de texto gigante en el medio
+     * de la nada. Decir que no soporta tablet es mas honesto que sostener un
+     * diseno que nadie probo.
+     */
+    supportsTablet: false,
     /**
      * El identificador con el que el sistema operativo reconoce a la app.
      *
@@ -58,7 +67,7 @@ const config: ExpoConfig = {
      * `version`, que es el texto que ve la persona. El primer build no lo
      * declaraba y quedo en 1.
      */
-    versionCode: 4,
+    versionCode: 5,
     adaptiveIcon: {
       backgroundColor: '#0C0C13',
       foregroundImage: './assets/android-icon-foreground.png',
@@ -71,6 +80,12 @@ const config: ExpoConfig = {
     'expo-secure-store',
     'expo-font',
     'expo-web-browser',
+    /**
+     * El aviso de la noche (ver `lib/notificaciones.ts`). El plugin se declara
+     * solo para el color con el que Android tine el icono chico de la
+     * notificacion; el resto -pedir permiso, programar, cancelar- es codigo.
+     */
+    ['expo-notifications', { color: '#AAFF4D' }],
     /**
      * El splash se configura aca y no en una clave `splash` de nivel superior:
      * en el SDK 57 esa clave ya no existe y paso a ser configuracion de este

@@ -11,6 +11,22 @@ import { presentacionDe } from '../lib/categorias';
  * pantallas.
  */
 
+/**
+ * Hasta cuanto se deja agrandar un monto cuando el telefono tiene el tamano de
+ * letra del sistema en grande.
+ *
+ * Android y iOS dejan subir la letra bastante mas que esto (hasta 2x o mas en
+ * los ajustes de accesibilidad). Los textos corridos de la app acompanan ese
+ * ajuste sin problema, porque pueden usar mas renglones; los montos no: viven
+ * en tarjetas de alto fijo y en filas con el icono a la izquierda, asi que a
+ * 2x se cortan o desbordan la tarjeta. 1,3 es el punto donde todavia se leen
+ * mas grandes y siguen entrando.
+ *
+ * Va aca y no suelto en cada pantalla para que sea un solo numero: si manana
+ * hay que ajustarlo, se ajusta una vez.
+ */
+export const MAX_ESCALA_MONTO = 1.3;
+
 export function Tarjeta({
   children,
   className = '',
