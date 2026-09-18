@@ -54,21 +54,66 @@ tenia dos servidores prendidos y el telefono estaba en la misma Wi-Fi.
 | 3 | Grupos compartidos, app mobile, editar y borrar gastos | Completa |
 | 3.5 | Varios grupos a la vez, gastos privados, diccionario del motor | Completa |
 | 4.1 | Deploy del backend en Vercel y build de Android con EAS | Completa |
-| 4.2 | Objetivos de gasto, notificaciones, pulido de UI | Pendiente |
+| 4.2 | Objetivos de gasto, aviso de la noche, pulido de UI | Completa |
 
-La version instalada es la **1.3.0**. Lo que trajeron las dos ultimas salio
-entero de usar la app todos los dias: el selector de que gastos se miran sin la
-vista que mezclaba lo propio con lo de los demas, la correccion de categoria con
-un paso de confirmar, el login con Google funcionando, el monto sin necesidad de
-escribir "$" adelante, el ojo para ver la contrasena al escribirla, y los
-cuadros de confirmar con el estilo de la app en vez de los del sistema.
+La version instalada es la **1.3.0** y la **1.4.0** esta escrita y probada,
+esperando su build. Lo que trajeron las ultimas salio entero de usar la app todos
+los dias: el selector de que gastos se miran sin la vista que mezclaba lo propio
+con lo de los demas, la correccion de categoria con un paso de confirmar, el
+login con Google funcionando, el monto sin necesidad de escribir "$" adelante, el
+ojo para ver la contrasena al escribirla, y los cuadros de confirmar con el
+estilo de la app en vez de los del sistema.
 
-Lo que queda, en orden de cuanto se nota al usarla:
+La 1.4.0 cierra el MVP con las tres cosas que faltaban:
 
-- **Objetivos de gasto**, la tabla existe desde la fase 1 pero no tiene ni
-  backend ni pantalla.
-- **Notificaciones push**, que son el resto de la fase 4.2.
-- **Detalles de UI** que solo aparecen usandola a diario.
+- **Objetivos de gasto.** Uno por vista -el propio y el de cada grupo-, mensual,
+  sobre el total, y opcional: si no se pone ninguno, el dashboard queda igual.
+- **El aviso de la noche.** Una sola notificacion por dia, a las 21, y en un dia
+  normal **no suena**: si cargaste tus gastos y venis bien con el objetivo, no
+  hay nada que decir. Ver la seccion propia.
+- **El pulido de UI**, que era sobre todo la app viendose distinta segun el
+  telefono Android. Ver las notas del final.
+
+Lo que queda: desplegar la 1.4.0 (primero el push, despues el build), probar el
+aviso en el telefono a las 21, y los detalles que solo aparecen usandola a
+diario. Para iOS el codigo ya esta listo; lo que falta es la cuenta de Apple
+Developer, que es lo unico que permite instalar la app en un iPhone de verdad.
+
+## Descargar la app
+
+### Android
+
+El APK se instala a mano, fuera de Google Play:
+
+**[Instalar Wallai 1.3.0 para Android](https://expo.dev/accounts/fr4nco/projects/wallai/builds/0a08d4e2-9dc9-4362-9d4c-88067a6022ad)**
+
+Esa pagina la publica EAS y abre sin cuenta: tiene el boton de descarga y un
+codigo QR para escanear desde el telefono. Como el APK no viene de la tienda,
+Android va a pedir permiso para instalar "apps de origen desconocido" la primera
+vez, que es el aviso normal de cualquier APK fuera de Play.
+
+Ese link apunta a un build concreto de EAS y los artefactos de EAS caducan a los
+30 dias en el plan gratuito. Por eso, **a partir de la 1.4.0 el APK se publica
+tambien como release de este repositorio**, que es un link que no vence:
+[releases](https://github.com/LesmeFranco/wallai/releases).
+
+### iOS
+
+**Todavia no hay descarga, y no es por el codigo.** La app es la misma para los
+dos sistemas, compila para iPhone y no tiene nada especifico de Android.
+
+El camino elegido es **TestFlight**, que es la app de Apple para repartir
+versiones de prueba. Lo importante, porque no es obvio: **no hace falta una
+Mac.** EAS compila en la nube y el envio a Apple se hace por linea de comandos,
+asi que todo el proceso sale desde Windows o Linux.
+
+Lo que si hace falta, y no tiene vuelta, es la cuenta de **Apple Developer
+(99 USD al anio)**: Apple no permite instalar una app fuera de la App Store sin
+ella, ni siquiera para probar. La firma gratuita con Xcode caduca a los siete
+dias y necesita una Mac, asi que no sirve.
+
+Una vez con la cuenta, quien quiera probarla instala TestFlight y entra con el
+link de invitacion. Los builds de prueba caducan a los 90 dias.
 
 ## Requisitos
 
@@ -82,11 +127,11 @@ Lo que queda, en orden de cuanto se nota al usarla:
 
 ```bash
 pnpm install      # instala todo el workspace de una sola vez
-pnpm test         # 67 tests en packages/validators
+pnpm test         # 92 tests en packages/validators
 pnpm typecheck    # verifica los tipos de los 5 paquetes
 ```
 
-Que deberias ver: los 67 tests en verde y los 5 paquetes sin errores de tipos.
+Que deberias ver: los 92 tests en verde y los 5 paquetes sin errores de tipos.
 
 ### 2. Conectar la base de datos
 
@@ -160,12 +205,44 @@ no son obvias:
   request. Eso significa que si faltan, falla el build entero y no un request
   suelto. Hay que cargarlas antes del primer deploy.
 
-**La app** se construye con EAS: `eas build --platform android --profile
-preview` produce un APK instalable a mano. Las variables van declaradas dentro
-de `eas.json` y no se leen del `.env`, porque ese archivo esta en `.gitignore` y
-no existe en los servidores de EAS. Que queden escritas ahi no expone nada
-nuevo: son las mismas tres que ya viajan dentro del APK, porque `app.config.ts`
-las pone en `extra` y eso queda embebido en el bundle.
+**El orden importa: primero el push, despues el build.** El backend se despliega
+solo con cada push a `main`, y cada version de la app suele estrenar endpoints o
+validaciones que el backend viejo no tiene. Al reves, el telefono quedaria con
+botones que fallan hasta que termine el deploy. En el otro sentido no hay riesgo,
+porque los cambios del backend son aditivos y la version instalada los ignora.
+
+**La app** se construye con EAS. Para Android, `eas build --platform android
+--profile preview` produce un APK instalable a mano.
+
+Para iOS el camino es TestFlight, y **no hace falta una Mac**: EAS compila en la
+nube y `eas submit` sube el build a Apple desde cualquier sistema. Lo que hace
+falta es la cuenta de Apple Developer. En orden:
+
+```bash
+# 1) Con la cuenta ya dada de alta y la app creada en App Store Connect
+#    usando el mismo bundle identifier que declara app.config.ts.
+npx eas-cli build -p ios --profile production   # pide la cuenta de Apple la primera vez
+npx eas-cli submit -p ios --latest              # sube el build a App Store Connect
+```
+
+EAS genera y administra solo el certificado de distribucion y el perfil de
+aprovisionamiento; alcanza con contestar que si.
+
+Despues, en App Store Connect, hay dos formas de repartirlo y conviene saber la
+diferencia antes de elegir:
+
+| | Cuantos | Cuanto tarda |
+|---|---|---|
+| **Testers internos** | Hasta 100, cada uno agregado como usuario de App Store Connect con su Apple ID | Minutos: **no pasa por revision** |
+| **Testers externos** | Hasta 10.000, con un link publico para compartir | El primer build pasa por una revision de Apple, en general un dia |
+
+Para unos pocos amigos, los testers internos son el camino rapido.
+
+Sin la cuenta paga tambien se puede compilar para el simulador
+(`eas build -p ios --profile preview`, que es lo que declara
+`ios: { simulator: true }` en `eas.json`), pero eso produce un build sin firmar
+que solo abre en el simulador de una Mac: sirve para mirar el diseno, no para
+que alguien use la app.
 
 Lo que hace que la app deje de depender de la maquina de desarrollo es
 `WALLAI_URL_API`. Sin esa variable, `lib/entorno.ts` deduce la direccion del
@@ -204,7 +281,9 @@ packages/
 - `categorias` — globales del sistema (`hogar_id` nulo) o propias de un grupo.
 - `gastos` — la tabla central. Montos en centavos enteros, fecha sin hora.
 - `reglas_tageo` — la memoria del motor: cada correccion del usuario queda aca.
-- `objetivos` — limites de gasto por persona o por grupo.
+- `objetivos` — limites de gasto por persona o por grupo. Guarda el limite, no
+  lo gastado: lo acumulado se calcula sumando gastos, porque un contador
+  denormalizado se desincroniza en silencio.
 
 Cada archivo en `packages/db/src/schema/` explica en comentarios por que la
 tabla es como es. Vale la pena leerlos antes de tocar nada.
@@ -227,6 +306,41 @@ hechas. En orden:
 3. **"Otros".** Si ninguno de los dos reconoce el texto, no se arriesga una
    categoria. Una sugerencia equivocada hace perder mas tiempo que ninguna.
 
+## El aviso de la noche
+
+La unica notificacion que manda la app: **una por dia como maximo, a las 21, y en
+un dia normal no suena**.
+
+Esa ultima parte es el diseno entero. Si la persona cargo sus gastos y viene bien
+con el objetivo, no hay nada que decirle, y una app que avisa cuando no tiene nada
+que decir termina silenciada desde los ajustes del telefono. El silencio esta
+garantizado por como se arma el mensaje, no por buena voluntad: la funcion que
+decide el texto devuelve "nada" en ese caso. Lo que puede decir, por orden de
+urgencia: que te pasaste del objetivo, que estas cerca del limite, o que todavia
+no cargaste nada hoy.
+
+Las 21 no son arbitrarias: el gasto en efectivo del dia ya ocurrio, la persona
+esta en casa con el telefono en la mano, y todavia no se durmio.
+
+Dos decisiones tecnicas que vale la pena mirar:
+
+- **Es una notificacion local, no una push.** Una push necesitaria una tabla de
+  tokens, un cron en el servidor y, en iPhone, una clave APNs que sale de la
+  cuenta paga de Apple Developer. Todo eso para decir algo que el telefono ya
+  sabe. La push va a hacer falta el dia que haya que avisar de algo que paso en
+  **otro** telefono.
+- **Se programan siete noches por adelantado, no una.** Como el texto se decide
+  en el telefono, hay que resolver tambien que pasa los dias en que nadie abre la
+  app, que son justo los dias en que hay que recordar cargar. La de hoy va con el
+  texto calculado con datos frescos y las seis siguientes con el recordatorio
+  generico; cada vez que se abre la app se cancelan todas y se recalculan. Asi,
+  cuando el dato se pone viejo, el mensaje se degrada hacia el correcto y no
+  hacia uno falso.
+
+El permiso se pide despues del primer gasto cargado, nunca al abrir la app por
+primera vez: un permiso pedido en frio se rechaza casi siempre, y ese rechazo es
+definitivo en los dos sistemas operativos.
+
 ## Por que el monorepo
 
 Los tipos y las validaciones se escriben una vez y se usan en los tres lados. Si
@@ -247,6 +361,20 @@ que el documento eligio tRPC y TypeScript de punta a punta.
   Nunca se edita una migracion ya aplicada: se genera una nueva.
 - Si PostgreSQL deja de responder pero el login sigue andando, probablemente la
   red este filtrando los puertos 5432 y 6543.
+- **Android dibuja de borde a borde y no se puede desactivar.** Desde el SDK 54
+  la app pinta por debajo de las barras del sistema en vez de arriba, asi que
+  todo lo que se apoye en el borde de abajo tiene que sumar `insets.bottom`.
+  Cuanto tapa depende del telefono -unos 16px con navegacion por gestos, unos
+  48px con los tres botones-, y por eso el mismo codigo se ve bien en un Android
+  y mal en otro. Es lo que le pasaba a la barra de pestanas hasta la 1.4.0.
+- **Las propiedades `shadow*` son solo de iOS.** En Android la sombra se pide con
+  `elevation`, que no acepta color: una sombra de color escrita con `shadowColor`
+  se ve en iPhone y no se ve en Android. La forma que funciona en los dos es
+  `boxShadow`, que existe en React Native desde la 0.76.
+- **Los montos llevan un tope de escala de fuente.** Con el tamano de letra del
+  sistema en grande, un monto de 44px se parte en dos renglones y desborda su
+  tarjeta. Los textos corridos no lo llevan: ahi escalar esta bien, porque pueden
+  usar mas renglones.
 - **El login social no puede depender de que la app siga viva.** Al volver del
   navegador por un esquema propio (`wallai://`), Android puede levantar la app
   de cero: el proceso arranca nuevo y la funcion que esperaba el retorno
