@@ -20,15 +20,24 @@
 
 ## Que es
 
-Una app de gastos para una familia. La carga es una sola frase:
+Una app de gastos para una familia. La carga es una frase:
 
 ```
 30000 hamburguesa en Guido
 ```
 
-De ahi el sistema saca el monto (el numero que abre el texto, o cualquiera
-marcado con "$" o "pesos"), la fecha si la mencionaste, y le asigna una
-categoria. Cuando se equivoca, la corregis una vez y no se vuelve a equivocar
+O varias, una por renglon, que es como queda la cosa cuando uno se acuerda de
+todo a la noche:
+
+```
+3000 hamburguesa
+5000 sube
+7000 pan
+```
+
+De cada renglon el sistema saca el monto (el numero que abre el texto, o
+cualquiera marcado con "$" o "pesos"), la fecha si la mencionaste, y le asigna
+una categoria. Cuando se equivoca, la corregis una vez y no se vuelve a equivocar
 con textos parecidos: esa correccion queda guardada y beneficia a todo el grupo.
 
 **El diferencial no es el tageo ni el multiusuario por separado**, que ya
@@ -127,11 +136,11 @@ link de invitacion. Los builds de prueba caducan a los 90 dias.
 
 ```bash
 pnpm install      # instala todo el workspace de una sola vez
-pnpm test         # 92 tests en packages/validators
+pnpm test         # 100 tests en packages/validators
 pnpm typecheck    # verifica los tipos de los 5 paquetes
 ```
 
-Que deberias ver: los 92 tests en verde y los 5 paquetes sin errores de tipos.
+Que deberias ver: los 100 tests en verde y los 5 paquetes sin errores de tipos.
 
 ### 2. Conectar la base de datos
 
@@ -287,6 +296,26 @@ packages/
 
 Cada archivo en `packages/db/src/schema/` explica en comentarios por que la
 tabla es como es. Vale la pena leerlos antes de tocar nada.
+
+## Como se suma alguien a un grupo
+
+Se comparte un link, no el codigo. El codigo de seis caracteres sigue existiendo
+y se puede copiar -sirve para dictarlo por telefono-, pero lo que se manda por
+chat es un link.
+
+El link es https y no un `wallai://` directo, y la diferencia importa: un esquema
+propio solo funciona si la app ya esta instalada, y si no, el link no hace nada y
+quien lo recibio no entiende por que. El link https siempre abre en algun lado, y
+desde ahi manda a la app a quien la tenga y al APK a quien no.
+
+Las cuatro situaciones quedan cubiertas: quien tiene la app y sesion ve la
+pantalla que le pregunta si quiere sumarse; quien tiene la app sin sesion entra
+primero y cae en esa misma pantalla, porque la invitacion se guarda en el
+telefono y no en memoria; quien no la tiene ve una pagina que le explica que es;
+y quien ya es integrante recibe un mensaje que se lo dice, no un error.
+
+Sumarse nunca es automatico al tocar el link. Un link que te mete en un grupo con
+solo tocarlo es un link que cualquiera puede usar para meterte donde no querias.
 
 ## Como funciona el motor de tageo
 
