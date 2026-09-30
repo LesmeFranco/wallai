@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { Redirect } from 'expo-router';
-import { BotonPrimario, Campo, MensajeError } from '../componentes/base';
+import { BotonPrimario, Campo, Cargando, MensajeError } from '../componentes/base';
+import { leerInvitacionPendiente } from '../lib/invitacion';
 import { IconoGoogle } from '../componentes/iconos';
 import { useSesion } from '../lib/sesion';
 
@@ -15,6 +16,22 @@ export default function Login() {
   const [error, setError] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
   const [cargando, setCargando] = useState(false);
+
+  /**
+   * El codigo de la invitacion que quedo esperando, si la persona llego aca
+   * desde un link de invitacion sin tener sesion.
+   *
+   * `undefined` es "todavia no se leyo", distinto de `null`, que es "no hay
+   * ninguna". La diferencia importa: sin ella habria que elegir entre mostrar el
+   * dashboard por un instante antes de saltar a la invitacion, o dejar la
+   * pantalla en blanco a quien entra normalmente.
+   */
+  const [invitacion, setInvitacion] = useState<string | null | undefined>(undefined);
+
+  useEffect(() => {
+    if (!sesion) return;
+    void leerInvitacionPendiente().then(setInvitacion);
+  }, [sesion]);
 
   const puedeEnviar = email.trim().length > 0 && contrasena.length > 0;
 
@@ -59,7 +76,17 @@ export default function Login() {
    * que el guard de (sesion)/_layout.tsx no viera la sesion y rebotara de
    * vuelta aca sin mostrar ningun error: parecia que el login no funcionaba.
    */
-  if (sesion) return <Redirect href="/dashboard" />;
+  if (sesion) {
+    if (invitacion === undefined) return <Cargando />;
+    // Quien llego por un link de invitacion vuelve a esa pantalla y no al
+    // dashboard: entro para contestar algo, y dejarlo en el dashboard lo
+    // obligaria a buscar el link otra vez en el chat.
+    return invitacion ? (
+      <Redirect href={{ pathname: '/unirse/[codigo]', params: { codigo: invitacion } }} />
+    ) : (
+      <Redirect href="/dashboard" />
+    );
+  }
 
   return (
     <KeyboardAvoidingView

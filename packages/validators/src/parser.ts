@@ -169,3 +169,49 @@ export function parsearTexto(texto: string): ResultadoParseo {
 
   return { montoCentavos, fecha, textoRestante: limpiarEspacios(restante) };
 }
+
+/**
+ * Cuantos gastos se aceptan en una sola carga.
+ *
+ * El tope no esta para limitar a nadie: es para que un pegado accidental de un
+ * texto largo no se convierta en cincuenta gastos. Veinte lineas es mucho mas
+ * de lo que alguien escribe de una sentada al llegar a la noche.
+ */
+export const MAXIMO_GASTOS_POR_LOTE = 20;
+
+export type LineaDeGasto = {
+  /** El texto de la linea tal como se escribio, sin los espacios de los bordes. */
+  texto: string;
+  /** El monto detectado en esa linea, o null si no tiene ninguno. */
+  montoCentavos: number | null;
+};
+
+/**
+ * Parte un texto de varias lineas en un gasto por linea.
+ *
+ * POR QUE EXISTE. Cargar los gastos del dia de a uno significa abrir la
+ * pantalla, escribir, guardar, volver, y otra vez, cinco veces. Nadie hace eso
+ * a la noche: deja de cargar. Escribir los cinco uno abajo del otro y guardar
+ * una sola vez es la misma informacion con una quinta parte de los toques.
+ *
+ * EL SEPARADOR ES EL SALTO DE LINEA, y solo eso. Se penso tambien en separar
+ * por comas, y se descarto: "2000 cafe, medialunas y jugo" es un gasto solo con
+ * comas adentro, asi que la coma no distingue nada. El salto de linea si es un
+ * gesto deliberado.
+ *
+ * OJO CON EL CAMBIO DE SIGNIFICADO: antes de esto, un salto de linea era parte
+ * de la descripcion de UN gasto, y el placeholder de la pantalla lo ensenaba
+ * asi ("30000 hamburguesa" / "en Guido"). Ahora eso serian dos gastos, y el
+ * segundo no tiene monto. Por eso la pantalla cambio el ejemplo y avisa en
+ * pantalla que cada linea es un gasto.
+ *
+ * Las lineas vacias se descartan: un renglon de mas al final, o dos saltos
+ * seguidos, son la forma normal de escribir una lista, no un gasto sin texto.
+ */
+export function separarEnGastos(texto: string): LineaDeGasto[] {
+  return texto
+    .split(/[\r\n]+/)
+    .map((linea) => linea.trim())
+    .filter((linea) => linea.length > 0)
+    .map((linea) => ({ texto: linea, montoCentavos: parsearTexto(linea).montoCentavos }));
+}

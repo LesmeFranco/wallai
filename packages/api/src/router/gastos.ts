@@ -4,6 +4,7 @@ import { gastos } from '@wallai/db';
 import {
   corregirCategoriaSchema,
   crearGastoSchema,
+  crearVariosGastosSchema,
   editarGastoSchema,
   eliminarGastoSchema,
   listarGastosSchema,
@@ -12,7 +13,12 @@ import {
   type DestinoGasto,
 } from '@wallai/validators';
 import { esMiembro, obtenerHogarPorDefectoId } from '../hogar';
-import { propietarioDeReglas, propietariosDeReglas, sugerirCategoria } from '../tageo';
+import {
+  crearCacheDeTageo,
+  propietarioDeReglas,
+  propietariosDeReglas,
+  sugerirCategoria,
+} from '../tageo';
 import { construirFiltroDeVisibilidad } from '../visibilidad';
 import { protectedProcedure, router } from '../trpc';
 import type { Contexto } from '../context';
@@ -112,6 +118,79 @@ export const gastosRouter = router({
 
     return gasto!;
   }),
+
+  /**
+   * Carga varios gastos de una sola vez, uno por cada texto del array.
+   *
+   * POR QUE EXISTE. Cargar de a uno significa abrir la pantalla, escribir,
+   * guardar y volver, tantas veces como gastos hubo en el dia. A la noche, con
+   * cinco cosas para anotar, eso no lo hace nadie: se deja de cargar, y una app
+   * de gastos sin gastos cargados no sirve. Es el riesgo numero uno del
+   * producto (la adopcion de la familia), no una comodidad.
+   *
+   * TODO O NADA. Se analiza y se valida el lote entero ANTES de escribir, y el
+   * insert es una sola sentencia, asi que o entran todos o no entra ninguno. La
+   * alternativa -guardar las lineas que se pueden y avisar de las otras- deja a
+   * la persona teniendo que averiguar cuales quedaron, justo despues de haber
+   * escrito cinco de memoria. La pantalla ademas marca la linea sin monto antes
+   * de dejar guardar, asi que este rechazo es una red de seguridad y no el
+   * camino habitual.
+   *
+   * UN SOLO DESTINO PARA TODO EL LOTE. Lo que se carga de una sentada es del
+   * mismo bolsillo; elegir grupo linea por linea seria volver a pedir una
+   * decision por gasto, que es justo lo que este endpoint viene a sacar. Para
+   * mandar uno a otro grupo, se carga aparte.
+   */
+  crearVarios: protectedProcedure
+    .input(crearVariosGastosSchema)
+    .mutation(async ({ ctx, input }) => {
+      const hogarId = await resolverHogarDelGasto(ctx.db, ctx.usuario.id, input.destino);
+      const propietarios = propietariosDeReglas(hogarId, ctx.usuario.id);
+
+      /**
+       * El cache hace que las reglas del grupo se pidan UNA vez para todo el
+       * lote, y no una por linea. Sin el, veinte lineas eran veinte consultas
+       * identicas; y las reglas no pueden cambiar mientras se procesa el lote,
+       * asi que releerlas no aporta nada. Ver `CacheDeTageo`.
+       */
+      const cache = crearCacheDeTageo();
+
+      const aInsertar = [];
+      for (const texto of input.textos) {
+        const analisis = parsearTexto(texto);
+        if (analisis.montoCentavos === null) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            // Se nombra la linea: con varias juntas, "falta el monto" sin decir
+            // dónde obliga a revisarlas todas.
+            message: `Falta el monto en "${texto}". Empezá por ahí: "500 café".`,
+          });
+        }
+
+        const sugerencia = await sugerirCategoria(
+          ctx.db,
+          propietarios,
+          analisis.textoRestante || texto,
+          cache,
+        );
+
+        aInsertar.push({
+          usuarioId: ctx.usuario.id,
+          hogarId,
+          montoCentavos: analisis.montoCentavos,
+          textoOriginal: texto,
+          categoriaId: sugerencia.categoriaId,
+          // Igual que en `crear`: caer en "Otros" tambien es una decision del
+          // motor, asi que cuenta como automatica.
+          origenCategoria: 'automatico' as const,
+          ...(analisis.fecha ? { fecha: analisis.fecha } : {}),
+        });
+      }
+
+      // Un insert de varias filas es atomico por si solo: no hace falta abrir
+      // una transaccion para que valga el todo o nada.
+      return ctx.db.insert(gastos).values(aInsertar).returning();
+    }),
 
   /**
    * Lista los gastos visibles para el usuario autenticado, más recientes

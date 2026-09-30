@@ -97,11 +97,52 @@ export type SugerenciaDeCategoria = {
   origen: OrigenSugerencia;
 };
 
+/** Una regla aprendida, tal como la necesita la busqueda por similitud. */
+type ReglaParaBuscar = {
+  patronNormalizado: string;
+  categoriaId: string;
+  vecesConfirmada: number;
+};
+
+/**
+ * Lo que `sugerirCategoria` puede reusar entre varias llamadas seguidas.
+ *
+ * Existe para cargar varios gastos de una sola vez (`gastos.crearVarios`). Sin
+ * esto, clasificar diez lineas significaba diez consultas identicas por las
+ * reglas del grupo, mas una por cada categoria que hubiera que resolver por
+ * clave: sobre una funcion serverless hablando con el pooler, eso es casi todo
+ * el tiempo de la operacion, y no aporta nada porque las reglas no cambian
+ * mientras se procesa el lote.
+ *
+ * Es opcional a proposito: sin cache, `sugerirCategoria` se comporta
+ * exactamente como antes. Quien carga un gasto suelto no paga ninguna
+ * complejidad nueva.
+ *
+ * El cache dura lo que dura un pedido y nunca se comparte entre pedidos. Un
+ * cache de reglas que viviera mas alla de eso seria un bug: la regla que
+ * alguien acaba de ensenar tiene que valer para el gasto siguiente.
+ */
+export type CacheDeTageo = {
+  reglas?: ReglaParaBuscar[];
+  /** clave de categoria -> id, o null si esa clave no existe en la base. */
+  porClave: Map<string, string | null>;
+  descarte?: string;
+};
+
+export function crearCacheDeTageo(): CacheDeTageo {
+  return { porClave: new Map() };
+}
+
 /**
  * Categoría a la que cae un gasto cuando no hay ninguna regla aplicable.
  * Nunca debería faltar: la siembra el script de seed (`db:seed`).
  */
-export async function obtenerCategoriaDescarte(db: Contexto['db']): Promise<string> {
+export async function obtenerCategoriaDescarte(
+  db: Contexto['db'],
+  cache?: CacheDeTageo,
+): Promise<string> {
+  if (cache?.descarte) return cache.descarte;
+
   const [fila] = await db
     .select({ id: categorias.id })
     .from(categorias)
@@ -110,22 +151,35 @@ export async function obtenerCategoriaDescarte(db: Contexto['db']): Promise<stri
   if (!fila) {
     throw new Error('Falta la categoría "Otros" en la base. ¿Se corrió pnpm --filter @wallai/db db:seed?');
   }
+  if (cache) cache.descarte = fila.id;
   return fila.id;
 }
 
 /** El id de una categoría global a partir de su clave, o null si no está. */
-async function idDeCategoriaGlobal(db: Contexto['db'], clave: string): Promise<string | null> {
+async function idDeCategoriaGlobal(
+  db: Contexto['db'],
+  clave: string,
+  cache?: CacheDeTageo,
+): Promise<string | null> {
+  const guardado = cache?.porClave.get(clave);
+  if (guardado !== undefined) return guardado;
+
   const [fila] = await db
     .select({ id: categorias.id })
     .from(categorias)
     .where(eq(categorias.clave, clave));
-  return fila?.id ?? null;
+
+  const id = fila?.id ?? null;
+  cache?.porClave.set(clave, id);
+  return id;
 }
 
 export async function sugerirCategoria(
   db: Contexto['db'],
   propietarios: PropietarioDeReglas[],
   textoDescriptivo: string,
+  /** Ver `CacheDeTageo`. Sin esto, cada llamada consulta la base por su cuenta. */
+  cache?: CacheDeTageo,
 ): Promise<SugerenciaDeCategoria> {
   const hogaresIds = propietarios.flatMap((p) => ('hogarId' in p ? [p.hogarId] : []));
   const usuariosIds = propietarios.flatMap((p) => ('usuarioId' in p ? [p.usuarioId] : []));
@@ -135,7 +189,7 @@ export async function sugerirCategoria(
     ...(usuariosIds.length ? [inArray(reglasTageo.usuarioId, usuariosIds)] : []),
   ];
 
-  const reglas = condiciones.length
+  const reglas = cache?.reglas ?? (condiciones.length
     ? await db
         .select({
           patronNormalizado: reglasTageo.patronNormalizado,
@@ -144,7 +198,8 @@ export async function sugerirCategoria(
         })
         .from(reglasTageo)
         .where(condiciones.length === 1 ? condiciones[0]! : or(...condiciones)!)
-    : [];
+    : []);
+  if (cache) cache.reglas = reglas;
 
   const textoNormalizado = normalizarTexto(textoDescriptivo);
 
@@ -185,7 +240,7 @@ export async function sugerirCategoria(
 
   const delDiccionario = buscarEnDiccionario(textoDescriptivo);
   if (delDiccionario) {
-    const categoriaId = await idDeCategoriaGlobal(db, delDiccionario.clave);
+    const categoriaId = await idDeCategoriaGlobal(db, delDiccionario.clave, cache);
     // Si la categoría del diccionario no existe en la base (seed viejo, clave
     // renombrada), se sigue de largo al descarte en vez de romper la carga del
     // gasto: que el motor no acierte es molesto, que no se pueda guardar un
@@ -193,7 +248,7 @@ export async function sugerirCategoria(
     if (categoriaId) return { categoriaId, origen: 'diccionario' };
   }
 
-  return { categoriaId: await obtenerCategoriaDescarte(db), origen: 'descarte' };
+  return { categoriaId: await obtenerCategoriaDescarte(db, cache), origen: 'descarte' };
 }
 
 /**

@@ -63,3 +63,16 @@ export function normalizarCodigoInvitacion(entrada: string): string {
 export function esCodigoInvitacionValido(entrada: string): boolean {
   return CODIGO_INVITACION_REGEX.test(normalizarCodigoInvitacion(entrada));
 }
+
+/**
+ * La ruta de la pagina que abre una invitacion, sin el dominio.
+ *
+ * Existe para que la app y la web no puedan discrepar: la app arma el link que
+ * se comparte y la web tiene que atender exactamente esa ruta. Si cada lado
+ * escribiera el string a mano, el dia que uno cambie los links compartidos
+ * quedarian apuntando a una pagina que no existe, y eso no se descubre hasta
+ * que alguien intenta sumarse.
+ */
+export function rutaDeInvitacion(codigo: string): string {
+  return `/unirse/${normalizarCodigoInvitacion(codigo)}`;
+}

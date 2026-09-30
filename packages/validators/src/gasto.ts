@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { alcanceSchema, destinoGastoSchema } from './alcance';
 import { MONTO_MAXIMO_CENTAVOS } from './dinero';
+import { MAXIMO_GASTOS_POR_LOTE } from './parser';
 
 /**
  * Esquemas de validacion de gastos, compartidos entre backend y frontend.
@@ -72,6 +73,35 @@ export const crearGastoSchema = z.object({
 });
 
 export type CrearGastoInput = z.infer<typeof crearGastoSchema>;
+
+/**
+ * Entrada para cargar varios gastos de una sola vez, uno por linea.
+ *
+ * POR QUE VIENE YA PARTIDO EN UN ARRAY y no como un texto de varias lineas que
+ * el servidor separa. Las dos formas funcionan, porque la funcion que parte
+ * (`separarEnGastos`) es compartida. La diferencia esta en lo que se puede
+ * prometer: la pantalla muestra una vista previa con el monto de cada linea
+ * antes de guardar, y mandando el array se guarda exactamente eso, linea por
+ * linea. Si el servidor volviera a partir el texto, cualquier diferencia futura
+ * en la regla de corte haria que se guardara algo distinto de lo que la persona
+ * vio, que es el peor error posible en una app de plata.
+ *
+ * No se acepta ninguna linea sin monto: el servidor rechaza el lote entero y no
+ * guarda nada. Es a proposito, y la pantalla lo evita antes de llegar aca
+ * marcando la linea en rojo. La alternativa -guardar las que se pueden- deja a
+ * la persona con la pregunta de cuales entraron y cuales no, justo cuando
+ * acababa de cargar cinco cosas de memoria.
+ */
+export const crearVariosGastosSchema = z.object({
+  textos: z
+    .array(z.string().trim().min(1).max(TEXTO_MAXIMO))
+    .min(1, 'Escribí al menos un gasto.')
+    .max(MAXIMO_GASTOS_POR_LOTE, `No se pueden cargar más de ${MAXIMO_GASTOS_POR_LOTE} de una vez.`),
+  /** A que grupo van TODOS los del lote, o privado. Mismo criterio que un gasto suelto. */
+  destino: destinoGastoSchema.optional(),
+});
+
+export type CrearVariosGastosInput = z.infer<typeof crearVariosGastosSchema>;
 
 /**
  * Entrada para corregir la categoría de un gasto ya cargado.

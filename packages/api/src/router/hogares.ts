@@ -13,7 +13,7 @@ import {
 import { esMiembro, esViolacionDeUnicidad, obtenerHogaresIds } from '../hogar';
 import { obtenerObjetivoDelAlcance } from '../objetivo';
 import { construirFiltroDeVisibilidad } from '../visibilidad';
-import { protectedProcedure, router } from '../trpc';
+import { protectedProcedure, publicProcedure, router } from '../trpc';
 
 /** Cuántas veces reintentar si el código generado choca con uno existente. */
 const INTENTOS_CODIGO = 5;
@@ -51,6 +51,37 @@ export const hogaresRouter = router({
     }
     // Inalcanzable: el for siempre retorna o relanza en la última vuelta.
     throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'No se pudo crear el grupo. Probá de nuevo.' });
+  }),
+
+  /**
+   * El nombre y el tipo de un grupo, a partir de su código de invitación.
+   *
+   * Es el UNICO procedimiento público del router, y tiene que serlo: existe
+   * para la página de invitación (`/unirse/<codigo>` en apps/web), que la abre
+   * alguien que todavía no tiene cuenta en Wallai. Pedirle sesión sería pedirle
+   * que se registre antes de saber a qué la están invitando.
+   *
+   * Devuelve SOLO el nombre y el tipo. No el id, no el código, no los
+   * integrantes, no los gastos: con el id se podrían pedir otras cosas, y la
+   * lista de integrantes con sus emails no tiene por qué verla alguien que
+   * todavía no entró. Sumarse sigue exigiendo sesión (`unirse`, abajo).
+   *
+   * Sobre lo que sí revela: quien tenga un código válido puede ver el nombre
+   * del grupo, que es exactamente lo que ese código ya le permitía averiguar
+   * sumándose. Probar códigos al azar para descubrir nombres es posible en
+   * teoría y no aporta nada en la práctica: son 31^6 (unos 887 millones) de
+   * combinaciones para conseguir la palabra "Casa".
+   */
+  porCodigo: publicProcedure.input(unirseHogarSchema).query(async ({ ctx, input }) => {
+    const [hogar] = await ctx.db
+      .select({ nombre: hogares.nombre, tipo: hogares.tipo })
+      .from(hogares)
+      .where(eq(hogares.codigoInvitacion, input.codigo));
+
+    if (!hogar) {
+      throw new TRPCError({ code: 'NOT_FOUND', message: 'Ese código no existe.' });
+    }
+    return hogar;
   }),
 
   /**

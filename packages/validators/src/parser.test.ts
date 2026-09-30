@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parsearTexto } from './parser';
+import { parsearTexto, separarEnGastos } from './parser';
 
 describe('parsearTexto', () => {
   it('el ejemplo canónico del documento', () => {
@@ -96,5 +96,51 @@ describe('parsearTexto', () => {
       expect(r.montoCentavos).toBe(450000);
       expect(r.textoRestante).toBe('');
     });
+  });
+});
+
+describe('separarEnGastos', () => {
+  it('una sola linea se comporta como un gasto solo', () => {
+    const lineas = separarEnGastos('3000 hamburguesa');
+    expect(lineas).toHaveLength(1);
+    expect(lineas[0]?.texto).toBe('3000 hamburguesa');
+    expect(lineas[0]?.montoCentavos).toBe(300000);
+  });
+
+  it('separa un gasto por linea y parsea el monto de cada uno', () => {
+    const lineas = separarEnGastos('3000 hamburguesa\n5000 sube\n7000 pan');
+    expect(lineas.map((l) => l.montoCentavos)).toEqual([300000, 500000, 700000]);
+    expect(lineas.map((l) => l.texto)).toEqual(['3000 hamburguesa', '5000 sube', '7000 pan']);
+  });
+
+  it('descarta lineas vacias y recorta espacios', () => {
+    const lineas = separarEnGastos('\n  3000 cafe  \n\n\n5000 sube\n  \n');
+    expect(lineas.map((l) => l.texto)).toEqual(['3000 cafe', '5000 sube']);
+  });
+
+  it('marca con null la linea que no tiene monto', () => {
+    const lineas = separarEnGastos('3000 cafe\nmedialunas\n5000 sube');
+    expect(lineas.map((l) => l.montoCentavos)).toEqual([300000, null, 500000]);
+  });
+
+  it('dos lineas iguales son dos gastos, no uno repetido', () => {
+    const lineas = separarEnGastos('500 cafe\n500 cafe');
+    expect(lineas).toHaveLength(2);
+  });
+
+  it('un texto vacio no da ningun gasto', () => {
+    expect(separarEnGastos('   \n\n  ')).toEqual([]);
+  });
+
+  it('respeta los marcadores del parser en cada linea por separado', () => {
+    // El "2" que abre la segunda linea no es plata porque el $ manda: es la
+    // misma regla que para un gasto suelto, aplicada linea por linea.
+    const lineas = separarEnGastos('cafe con 2 medialunas $1500\n2 empanadas $3000');
+    expect(lineas.map((l) => l.montoCentavos)).toEqual([150000, 300000]);
+  });
+
+  it('tambien parte con saltos de linea de Windows', () => {
+    const lineas = separarEnGastos('3000 cafe\r\n5000 sube');
+    expect(lineas.map((l) => l.montoCentavos)).toEqual([300000, 500000]);
   });
 });

@@ -1,10 +1,26 @@
 @import 'tailwindcss';
 
+/**
+ * Los mismos tokens que la app mobile (apps/mobile/tailwind.config.js), con los
+ * mismos nombres en castellano.
+ *
+ * Antes esta paleta era otra, elegida para la pagina de humo del paso 1.2,
+ * cuando apps/web no mostraba nada que viera un usuario. Dejo de ser cierto con
+ * la pagina de invitacion: es lo primero que ve alguien a quien invitan a un
+ * grupo, o sea la cara de Wallai para alguien que todavia no la conoce. Que ahi
+ * los colores no coincidan con los de la app que va a instalar un minuto
+ * despues es exactamente el tipo de detalle que hace dudar de si el link es
+ * legitimo.
+ */
 @theme {
-  --color-fondo: #0b0d10;
-  --color-superficie: #14181d;
-  --color-borde: #232a32;
-  --color-texto: #e8edf2;
-  --color-atenuado: #8d99a6;
-  --color-acento: #4ade80;
+  --color-fondo: #0c0c13;
+  --color-superficie: #151520;
+  --color-superficie-alta: #1c1c2a;
+  --color-borde: #252538;
+  --color-borde-claro: #333350;
+  --color-primario: #f0f0fa;
+  --color-secundario: #9999b3;
+  --color-tenue: #5a5a78;
+  --color-lima: #aaff4d;
+  --color-coral: #ff6b6b;
 }

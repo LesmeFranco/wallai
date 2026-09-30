@@ -130,9 +130,18 @@ export function ProveedorDeSesion({ children }: { children: ReactNode }) {
 
     async function atender(url: string | null, origen: string) {
       if (!vivo || !url) return;
-      // Solo interesan las vueltas del login. Cualquier otro deep link (por
-      // ejemplo, si algun dia se comparte un link a un gasto) no se toca.
-      if (!url.includes('code=') && !url.includes('error')) return;
+      /**
+       * Solo las vueltas de OAuth siguen. Antes se buscaba el texto "code=" o
+       * "error" en cualquier parte de la URL, y eso alcanzaba cuando el unico
+       * deep link de la app era el del login. Ahora hay otro
+       * (`wallai://unirse/<codigo>`), asi que hace falta distinguirlos.
+       *
+       * La expresion pide que sea un parametro de verdad -precedido por ?, # o
+       * &- y no una palabra suelta en el camino de la URL. Incluye
+       * `error_description` porque no contiene `error=` como subcadena, asi que
+       * un error que llegara solo con esa clave se habria descartado en silencio.
+       */
+      if (!/[?#&](code|error|error_description)=/.test(url)) return;
       const resultado = await canjearCodigoDeUrl(url);
       console.warn(`[google] deep link (${origen}): ${resultado}`);
       if (vivo) setDiagnosticoGoogle(`Vuelta de Google (${origen}): ${resultado}.`);

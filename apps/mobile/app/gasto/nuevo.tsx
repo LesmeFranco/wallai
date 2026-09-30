@@ -11,14 +11,21 @@ import {
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeIn, ZoomIn } from 'react-native-reanimated';
-import { parsearTexto, type DestinoGasto } from '@wallai/validators';
+import {
+  MAXIMO_GASTOS_POR_LOTE,
+  separarEnGastos,
+  type DestinoGasto,
+} from '@wallai/validators';
 import {
   BotonPrimario,
   Etiqueta,
+  IconoCategoria,
+  MAX_ESCALA_MONTO,
   MensajeError,
   PastillaCategoria,
   Tarjeta,
 } from '../../componentes/base';
+import { CorrectorDeCategoria } from '../../componentes/CorrectorDeCategoria';
 import { IconoTilde, IconoVolver } from '../../componentes/iconos';
 import { formatearPesosSinCentavos } from '../../lib/formato';
 import { presentacionDeGrupo } from '../../lib/grupos';
@@ -39,6 +46,14 @@ import { trpc } from '../../lib/trpc';
 const EJEMPLOS = ['30000 nafta Shell', '15500 café y medialunas', '8900 colectivo ayer', '45000 super Coto'];
 
 type Estado = 'escribiendo' | 'guardado';
+
+/** Un gasto tal como volvio del servidor despues de guardarlo. */
+type GastoCargado = {
+  id: string;
+  textoOriginal: string;
+  montoCentavos: number;
+  categoriaId: string;
+};
 
 export default function NuevoGasto() {
   const router = useRouter();
@@ -70,35 +85,71 @@ export default function NuevoGasto() {
     (misGrupos[0] ? { tipo: 'hogar', hogarId: misGrupos[0].id } : { tipo: 'personal' });
 
   /**
-   * El monto se muestra mientras la persona escribe, calculado en el telefono
-   * con el MISMO parser que usa el servidor (esta en packages/validators, que
-   * es codigo puro compartido). No hay forma de que lo que se ve en pantalla
-   * difiera de lo que se va a guardar, y no cuesta una llamada de red.
+   * El texto partido en un gasto por linea, con el monto de cada uno.
+   *
+   * Se calcula en el telefono con el MISMO codigo que usa el servidor (esta en
+   * packages/validators, que es logica pura compartida), asi que la vista
+   * previa no puede diferir de lo que se va a guardar. Y no cuesta una llamada
+   * de red: se recalcula en cada tecla.
    */
-  const analisis = useMemo(() => parsearTexto(texto), [texto]);
+  const lineas = useMemo(() => separarEnGastos(texto), [texto]);
 
-  const [gastoGuardado, setGastoGuardado] = useState<{
-    id: string;
-    montoCentavos: number;
-    categoriaId: string;
-  } | null>(null);
+  const lineasSinMonto = lineas.filter((linea) => linea.montoCentavos === null);
+  const totalDelLote = lineas.reduce((suma, linea) => suma + (linea.montoCentavos ?? 0), 0);
+  const sonDemasiadas = lineas.length > MAXIMO_GASTOS_POR_LOTE;
+  // Guardar solo tiene sentido si hay al menos una linea, todas tienen monto, y
+  // no son mas de las que el servidor acepta. Los tres casos se explican en
+  // pantalla, asi que el boton deshabilitado nunca es un misterio.
+  const sePuedeGuardar = lineas.length > 0 && lineasSinMonto.length === 0 && !sonDemasiadas;
+
+  /**
+   * Los gastos que quedaron guardados. Es una lista y no uno solo porque ahora
+   * se puede cargar varios de una vez; con uno solo, la lista tiene un elemento
+   * y la pantalla de confirmacion es la misma de siempre.
+   */
+  const [gastosGuardados, setGastosGuardados] = useState<GastoCargado[]>([]);
+
+  /** El gasto cuya hoja de correccion esta abierta, cuando se cargo mas de uno. */
+  const [gastoACorregir, setGastoACorregir] = useState<GastoCargado | null>(null);
+
+  /**
+   * El gasto, cuando se cargo uno solo.
+   *
+   * Con uno solo la confirmacion sigue siendo la de siempre: el monto grande,
+   * la categoria, y las pastillas para corregir en la misma pantalla. Es el
+   * caso mas comun y no habia ninguna razon para cambiarlo.
+   */
+  const unico = gastosGuardados.length === 1 ? gastosGuardados[0] : undefined;
 
   /**
    * La categoria que la persona toco mientras corrige, que NO es todavia la
-   * guardada. Son dos cosas distintas a proposito: `gastoGuardado.categoriaId`
+   * guardada. Son dos cosas distintas a proposito: `unico.categoriaId`
    * es lo que hay en la base y esto es una intencion sin confirmar. Se separan
    * porque el paso de confirmar existe justamente para poder cambiar de idea
    * (o deshacer un toque sin querer) antes de que viaje nada.
    */
   const [categoriaElegida, setCategoriaElegida] = useState<string | null>(null);
 
-  const crear = trpc.gastos.crear.useMutation({
-    onSuccess: (gasto) => {
-      setGastoGuardado({
-        id: gasto.id,
-        montoCentavos: gasto.montoCentavos,
-        categoriaId: gasto.categoriaId,
-      });
+  /**
+   * Siempre se usa `crearVarios`, incluso para un gasto solo.
+   *
+   * Podria elegirse entre `crear` y `crearVarios` segun la cantidad, y seria
+   * peor: dos caminos distintos para la accion mas repetida de la app, y el de
+   * un gasto solo -el mas usado- ejercitando codigo que el de varios no. Con
+   * uno solo, `crearVarios` recibe un array de un elemento y devuelve otro de
+   * un elemento. `gastos.crear` sigue existiendo porque lo usan las versiones
+   * de la app ya instaladas.
+   */
+  const crear = trpc.gastos.crearVarios.useMutation({
+    onSuccess: (creados) => {
+      setGastosGuardados(
+        creados.map((gasto) => ({
+          id: gasto.id,
+          textoOriginal: gasto.textoOriginal,
+          montoCentavos: gasto.montoCentavos,
+          categoriaId: gasto.categoriaId,
+        })),
+      );
       setEstado('guardado');
       // Invalida lo que el dashboard y el historial muestran, para que al
       // volver ya estén con el gasto nuevo incluido.
@@ -153,11 +204,11 @@ export default function NuevoGasto() {
    * lado de quien lo usa la accion es una sola: "ya esta, listo".
    */
   function confirmarYSalir() {
-    if (!gastoGuardado) return router.back();
-    const elegida = categoriaElegida ?? gastoGuardado.categoriaId;
-    if (elegida === gastoGuardado.categoriaId) return router.back();
+    if (!unico) return router.back();
+    const elegida = categoriaElegida ?? unico.categoriaId;
+    if (elegida === unico.categoriaId) return router.back();
     setError(null);
-    corregir.mutate({ gastoId: gastoGuardado.id, categoriaId: elegida });
+    corregir.mutate({ gastoId: unico.id, categoriaId: elegida });
   }
 
   /**
@@ -166,10 +217,10 @@ export default function NuevoGasto() {
    * instante es lo que hace que el toque se sienta registrado sin haber
    * guardado nada todavia; el cartel de abajo aclara que falta confirmar.
    */
-  const categoriaMostradaId = categoriaElegida ?? gastoGuardado?.categoriaId;
+  const categoriaMostradaId = categoriaElegida ?? unico?.categoriaId;
   const categoriaMostrada = categorias.data?.find((c) => c.id === categoriaMostradaId);
   const hayCambioSinGuardar =
-    categoriaElegida !== null && categoriaElegida !== gastoGuardado?.categoriaId;
+    categoriaElegida !== null && categoriaElegida !== unico?.categoriaId;
 
   const grupoDelDestino =
     destino.tipo === 'hogar' ? misGrupos.find((grupo) => grupo.id === destino.hogarId) : undefined;
@@ -177,7 +228,101 @@ export default function NuevoGasto() {
     ? `${presentacionDeGrupo(grupoDelDestino.tipo).icono} ${grupoDelDestino.nombre}`
     : '🔒 Privado, solo lo ves vos';
 
-  if (estado === 'guardado' && gastoGuardado) {
+  /**
+   * Confirmacion de varios gastos: una lista.
+   *
+   * No se reusa la pantalla de uno solo con el monto grande porque con cinco
+   * gastos el dato importante no es cada monto sino que quedaron los cinco y en
+   * que categoria cayo cada uno, que es justo lo que hay que poder corregir.
+   */
+  if (estado === 'guardado' && gastosGuardados.length > 1) {
+    return (
+      <View className="flex-1" style={{ paddingTop: insets.top + 8 }}>
+        <View className="items-center px-7 pb-3 pt-4">
+          <Animated.View
+            entering={ZoomIn.springify().damping(12)}
+            className="h-16 w-16 items-center justify-center rounded-[24px] bg-lima"
+          >
+            <IconoTilde />
+          </Animated.View>
+
+          <Animated.View entering={FadeIn.delay(150)} className="items-center">
+            <Text className="mt-5 font-display-extra text-[26px] tracking-tight text-primario">
+              Cargaste {gastosGuardados.length} gastos
+            </Text>
+            <Text
+              className="mt-1 font-display-extra text-3xl tracking-tighter text-lima"
+              maxFontSizeMultiplier={MAX_ESCALA_MONTO}
+              numberOfLines={1}
+            >
+              {formatearPesosSinCentavos(
+                gastosGuardados.reduce((suma, gasto) => suma + gasto.montoCentavos, 0),
+              )}
+            </Text>
+            {misGrupos.length > 0 ? (
+              <Text className="mt-1 font-cuerpo text-[13px] text-tenue">{nombreDelDestino}</Text>
+            ) : null}
+          </Animated.View>
+        </View>
+
+        <ScrollView contentContainerClassName="px-5 pb-6">
+          <Etiqueta className="mb-2.5">Tocá uno para cambiarle la categoría</Etiqueta>
+
+          <View className="gap-2.5">
+            {gastosGuardados.map((gasto) => {
+              const categoria = categorias.data?.find((c) => c.id === gasto.categoriaId);
+              return (
+                <Pressable key={gasto.id} onPress={() => setGastoACorregir(gasto)}>
+                  <Tarjeta className="flex-row items-center gap-3 px-4 py-3.5 active:opacity-70">
+                    <IconoCategoria clave={categoria?.clave ?? null} tamano={40} />
+                    <View className="flex-1">
+                      <Text
+                        className="font-cuerpo-semi text-[15px] text-primario"
+                        numberOfLines={1}
+                      >
+                        {gasto.textoOriginal}
+                      </Text>
+                      <Text className="mt-0.5 font-cuerpo text-xs text-secundario">
+                        {categoria?.nombre ?? 'Otros'}
+                      </Text>
+                    </View>
+                    <Text
+                      className="font-display text-lg tracking-tight text-primario"
+                      maxFontSizeMultiplier={MAX_ESCALA_MONTO}
+                      numberOfLines={1}
+                    >
+                      {formatearPesosSinCentavos(gasto.montoCentavos)}
+                    </Text>
+                  </Tarjeta>
+                </Pressable>
+              );
+            })}
+          </View>
+
+          <Text className="mt-3.5 font-cuerpo text-xs leading-5 text-tenue">
+            Corregir una categoría le enseña al grupo: la próxima vez que alguien escriba algo
+            parecido, Wallai ya va a saber dónde va.
+          </Text>
+
+          <View className="mt-7">
+            <BotonPrimario onPress={() => router.back()}>Listo</BotonPrimario>
+          </View>
+        </ScrollView>
+
+        <CorrectorDeCategoria
+          gasto={gastoACorregir}
+          onCerrar={() => setGastoACorregir(null)}
+          onCorregido={(gastoId, categoriaId) =>
+            setGastosGuardados((previos) =>
+              previos.map((gasto) => (gasto.id === gastoId ? { ...gasto, categoriaId } : gasto)),
+            )
+          }
+        />
+      </View>
+    );
+  }
+
+  if (estado === 'guardado' && unico) {
     return (
       <View className="flex-1 items-center justify-center px-7" style={{ paddingTop: insets.top }}>
         <Animated.View
@@ -189,7 +334,7 @@ export default function NuevoGasto() {
 
         <Animated.View entering={FadeIn.delay(150)} className="mt-6 items-center">
           <Text className="font-display-extra text-4xl tracking-tighter text-lima">
-            {formatearPesosSinCentavos(gastoGuardado.montoCentavos)}
+            {formatearPesosSinCentavos(unico.montoCentavos)}
           </Text>
           <Text className="mt-1 font-cuerpo text-[15px] text-secundario">
             Guardado en{' '}
@@ -278,14 +423,26 @@ export default function NuevoGasto() {
         keyboardShouldPersistTaps="handled"
       >
         <Tarjeta className="min-h-[180px] flex-1 border-2 p-6">
-          <Etiqueta className="mb-4">¿Qué gastaste?</Etiqueta>
+          <View className="mb-4 flex-row items-baseline justify-between">
+            <Etiqueta>¿Qué gastaste?</Etiqueta>
+            {/* Va en la etiqueta y no en un cartel aparte: que cada renglon sea
+                un gasto hay que entenderlo antes de escribir, no despues. */}
+            <Etiqueta>Uno por línea</Etiqueta>
+          </View>
           <TextInput
             value={texto}
             onChangeText={(valor) => {
               setTexto(valor);
               setError(null);
             }}
-            placeholder={'30000 hamburguesa\nen Guido'}
+            /*
+              El ejemplo cambio a proposito, y es el aviso mas importante de
+              este cambio: antes mostraba UNA descripcion partida en dos
+              renglones ("30000 hamburguesa" / "en Guido"), que ahora serian dos
+              gastos y el segundo sin monto. Ahora muestra tres gastos, que es
+              lo que el salto de linea significa.
+            */
+            placeholder={'3000 hamburguesa\n5000 sube\n7000 pan'}
             placeholderTextColor="#5A5A78"
             multiline
             autoFocus
@@ -293,19 +450,72 @@ export default function NuevoGasto() {
             style={{ textAlignVertical: 'top' }}
           />
 
-          {analisis.montoCentavos === null ? (
-            <Text className="mt-2 font-cuerpo text-[13px] text-tenue">
-              Empezá por el monto y seguí con qué fue. Wallai lo categoriza solo.
+          {lineas.length === 0 ? (
+            <Text className="mt-2 font-cuerpo text-[13px] leading-5 text-tenue">
+              Empezá por el monto y seguí con qué fue. Si tenés varios, uno por renglón: Wallai los
+              categoriza solos.
             </Text>
-          ) : (
-            <View className="mt-3 flex-row items-baseline gap-2">
-              <Etiqueta>Monto detectado</Etiqueta>
-              <Text className="font-display text-xl tracking-tight text-lima">
-                {formatearPesosSinCentavos(analisis.montoCentavos)}
-              </Text>
-            </View>
-          )}
+          ) : null}
         </Tarjeta>
+
+        {/*
+          La vista previa, fuera de la tarjeta del campo.
+
+          Es lo que hace que cargar varios de una no sea a ciegas: se ve el monto
+          detectado en cada renglon antes de guardar, calculado con el mismo
+          codigo que va a usar el servidor. Y el renglon al que le falta el monto
+          se marca en el momento, que es cuando la persona todavia se acuerda de
+          cuanto fue.
+        */}
+        {lineas.length > 0 ? (
+          <View className="mt-4">
+            <View className="mb-2.5 flex-row items-baseline justify-between">
+              <Etiqueta>{lineas.length === 1 ? 'Un gasto' : `${lineas.length} gastos`}</Etiqueta>
+              {lineas.length > 1 && lineasSinMonto.length === 0 ? (
+                <Text
+                  className="font-display text-[15px] tracking-tight text-lima"
+                  maxFontSizeMultiplier={MAX_ESCALA_MONTO}
+                >
+                  {formatearPesosSinCentavos(totalDelLote)}
+                </Text>
+              ) : null}
+            </View>
+
+            <View className="gap-2">
+              {lineas.map((linea, indice) => (
+                <View
+                  key={`${indice}-${linea.texto}`}
+                  className={`flex-row items-center gap-3 rounded-[14px] border px-3.5 py-2.5 ${
+                    linea.montoCentavos === null
+                      ? 'border-coral/40 bg-coral/[0.07]'
+                      : 'border-borde bg-superficie-alta'
+                  }`}
+                >
+                  <Text className="flex-1 font-cuerpo text-[13px] text-secundario" numberOfLines={1}>
+                    {linea.texto}
+                  </Text>
+                  {linea.montoCentavos === null ? (
+                    <Text className="font-cuerpo-semi text-xs text-coral">falta el monto</Text>
+                  ) : (
+                    <Text
+                      className="font-display text-[15px] tracking-tight text-primario"
+                      maxFontSizeMultiplier={MAX_ESCALA_MONTO}
+                    >
+                      {formatearPesosSinCentavos(linea.montoCentavos)}
+                    </Text>
+                  )}
+                </View>
+              ))}
+            </View>
+
+            {sonDemasiadas ? (
+              <Text className="mt-2.5 font-cuerpo text-xs leading-5 text-coral">
+                Son demasiados para una sola vez. El máximo es {MAXIMO_GASTOS_POR_LOTE}: guardá
+                estos y seguí con el resto.
+              </Text>
+            ) : null}
+          </View>
+        ) : null}
 
         {/*
           El selector de destino aparece solo si la persona pertenece a algun
@@ -368,7 +578,16 @@ export default function NuevoGasto() {
             {EJEMPLOS.map((ejemplo) => (
               <Pressable
                 key={ejemplo}
-                onPress={() => setTexto(ejemplo)}
+                /*
+                  Agrega un renglon en vez de reemplazar lo escrito: ahora que se
+                  cargan varios juntos, pisarle el texto a alguien que ya
+                  escribio tres lineas seria borrarle el trabajo.
+                */
+                onPress={() =>
+                  setTexto((previo) =>
+                    previo.trim() ? `${previo.trimEnd()}\n${ejemplo}` : ejemplo,
+                  )
+                }
                 className="rounded-pastilla border border-borde bg-superficie-alta px-3.5 py-2 active:opacity-70"
               >
                 <Text className="font-cuerpo-medio text-[13px] text-secundario">{ejemplo}</Text>
@@ -381,11 +600,11 @@ export default function NuevoGasto() {
 
         <View className="mt-auto pt-4">
           <BotonPrimario
-            onPress={() => crear.mutate({ texto: texto.trim(), destino })}
-            deshabilitado={texto.trim().length === 0}
+            onPress={() => crear.mutate({ textos: lineas.map((linea) => linea.texto), destino })}
+            deshabilitado={!sePuedeGuardar}
             cargando={crear.isPending}
           >
-            Guardar gasto
+            {lineas.length > 1 ? `Guardar ${lineas.length} gastos` : 'Guardar gasto'}
           </BotonPrimario>
         </View>
       </ScrollView>

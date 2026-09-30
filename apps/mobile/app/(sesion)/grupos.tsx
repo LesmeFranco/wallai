@@ -3,6 +3,7 @@ import { Pressable, ScrollView, Share, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
+import { rutaDeInvitacion } from '@wallai/validators';
 import {
   BotonPrimario,
   BotonSecundario,
@@ -17,6 +18,7 @@ import { IconoCopiar } from '../../componentes/iconos';
 import { formatearPesosCorto } from '../../lib/formato';
 import { presentacionDeGrupo } from '../../lib/grupos';
 import { useSesion } from '../../lib/sesion';
+import { urlApi } from '../../lib/entorno';
 import { trpc, type SalidasApi } from '../../lib/trpc';
 
 /** Colores con los que se tiñe la inicial de cada miembro, en orden. */
@@ -177,6 +179,31 @@ function TarjetaDeGrupo({ grupo }: { grupo: Grupo }) {
     setTimeout(() => setCopiado(false), 2000);
   }
 
+  /**
+   * Compartir manda un LINK, no el codigo.
+   *
+   * Antes el mensaje decia "sumate con el codigo ABC123", y eso le dejaba todo
+   * el trabajo a la otra persona: tener la app, saber que hay que ir a Grupos y
+   * despues a "Sumarme con un codigo", y tipear seis caracteres sin
+   * equivocarse. Con el link toca una sola vez: si tiene Wallai, se abre en la
+   * pantalla que le pregunta si quiere sumarse; si no la tiene, cae en una
+   * pagina que le explica que es y le ofrece la descarga.
+   *
+   * Copiar sigue copiando el codigo pelado, que es lo correcto: sirve para
+   * dictarlo por telefono, que es justamente el caso en que un link no sirve.
+   *
+   * La ruta la arma `rutaDeInvitacion`, compartida con la web, para que las dos
+   * puntas del link no puedan discrepar.
+   */
+  async function compartirInvitacion() {
+    const link = `${urlApi}${rutaDeInvitacion(grupo.codigoInvitacion)}`;
+    await Share.share({
+      // El nombre del grupo va en el mensaje y no solo en la pagina: quien lo
+      // recibe tiene que poder decidir si le interesa antes de tocar un link.
+      message: `Te invito a ${grupo.nombre} en Wallai, para llevar los gastos compartidos: ${link}`,
+    });
+  }
+
   return (
     <Tarjeta className="mb-4 p-5">
       <View className="flex-row items-center gap-3.5">
@@ -226,11 +253,7 @@ function TarjetaDeGrupo({ grupo }: { grupo: Grupo }) {
         </Pressable>
 
         <Pressable
-          onPress={() =>
-            void Share.share({
-              message: `Sumate a ${grupo.nombre} en Wallai con el código ${grupo.codigoInvitacion}`,
-            })
-          }
+          onPress={() => void compartirInvitacion()}
           className="flex-1 items-center justify-center rounded-boton border-[1.5px] border-borde-claro py-3 active:opacity-70"
         >
           <Text className="font-cuerpo-semi text-sm text-primario">Compartir</Text>

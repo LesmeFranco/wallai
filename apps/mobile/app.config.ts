@@ -31,12 +31,13 @@ const config: ExpoConfig = {
    * reemplaza los cuadros nativos de Android por dialogos con el estilo de la
    * app, y acorta los mensajes de error. 1.4.0 cierra la fase 4.2: objetivos de
    * gasto, el aviso de la noche, y el pulido que hacia que la app se viera
-   * distinta segun el telefono.
+   * distinta segun el telefono. 1.5.0 cambia la invitacion por un link que abre
+   * la app, y permite cargar varios gastos de una, uno por renglon.
    *
    * Subirla no es tramite: es lo unico que permite mirar el telefono y saber
    * cual de los APK quedo instalado.
    */
-  version: '1.4.0',
+  version: '1.5.0',
   orientation: 'portrait',
   icon: './assets/icon.png',
   scheme: 'wallai',
@@ -67,7 +68,7 @@ const config: ExpoConfig = {
      * `version`, que es el texto que ve la persona. El primer build no lo
      * declaraba y quedo en 1.
      */
-    versionCode: 5,
+    versionCode: 6,
     adaptiveIcon: {
       backgroundColor: '#0C0C13',
       foregroundImage: './assets/android-icon-foreground.png',

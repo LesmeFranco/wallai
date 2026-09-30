@@ -11,12 +11,14 @@ export {
   TEXTO_MAXIMO,
   corregirCategoriaSchema,
   crearGastoSchema,
+  crearVariosGastosSchema,
   editarGastoSchema,
   eliminarGastoSchema,
   fechaSchema,
   listarGastosSchema,
   type CorregirCategoriaInput,
   type CrearGastoInput,
+  type CrearVariosGastosInput,
   type EditarGastoInput,
   type EliminarGastoInput,
   type ListarGastosInput,
@@ -53,6 +55,7 @@ export {
   esCodigoInvitacionValido,
   generarCodigoInvitacion,
   normalizarCodigoInvitacion,
+  rutaDeInvitacion,
 } from './codigoInvitacion';
 
 export { normalizarTexto } from './texto';
@@ -78,4 +81,10 @@ export {
   type QuitarObjetivoInput,
 } from './objetivo';
 
-export { parsearTexto, type ResultadoParseo } from './parser';
+export {
+  MAXIMO_GASTOS_POR_LOTE,
+  parsearTexto,
+  separarEnGastos,
+  type LineaDeGasto,
+  type ResultadoParseo,
+} from './parser';
