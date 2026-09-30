@@ -56,10 +56,11 @@ tenia dos servidores prendidos y el telefono estaba en la misma Wi-Fi.
 | 4.1 | Deploy del backend en Vercel y build de Android con EAS | Completa |
 | 4.2 | Objetivos de gasto, aviso de la noche, pulido de UI | Completa |
 
-La version instalada es la **1.3.0** y la **1.4.0** esta escrita y probada,
-esperando su build. Lo que trajeron las ultimas salio entero de usar la app todos
-los dias: el selector de que gastos se miran sin la vista que mezclaba lo propio
-con lo de los demas, la correccion de categoria con un paso de confirmar, el
+La ultima version es la **1.4.0**, publicada en
+[releases](https://github.com/LesmeFranco/wallai/releases/latest). Lo que trajeron
+las ultimas salio entero de usar la app todos los dias: el selector de que
+gastos se miran sin la vista que mezclaba lo propio con lo de los demas, la
+correccion de categoria con un paso de confirmar, el
 login con Google funcionando, el monto sin necesidad de escribir "$" adelante, el
 ojo para ver la contrasena al escribirla, y los cuadros de confirmar con el
 estilo de la app en vez de los del sistema.
@@ -74,28 +75,27 @@ La 1.4.0 cierra el MVP con las tres cosas que faltaban:
 - **El pulido de UI**, que era sobre todo la app viendose distinta segun el
   telefono Android. Ver las notas del final.
 
-Lo que queda: desplegar la 1.4.0 (primero el push, despues el build), probar el
-aviso en el telefono a las 21, y los detalles que solo aparecen usandola a
-diario. Para iOS el codigo ya esta listo; lo que falta es la cuenta de Apple
-Developer, que es lo unico que permite instalar la app en un iPhone de verdad.
+Lo que queda: los detalles que solo aparecen usandola a diario. Para iOS el
+codigo ya esta listo; lo que falta es la cuenta de Apple Developer, que es lo
+unico que permite instalar la app en un iPhone de verdad.
 
 ## Descargar la app
 
 ### Android
 
-El APK se instala a mano, fuera de Google Play:
+**[Descargar Wallai 1.4.0 para Android](https://github.com/LesmeFranco/wallai/releases/latest)**
 
-**[Instalar Wallai 1.3.0 para Android](https://expo.dev/accounts/fr4nco/projects/wallai/builds/0a08d4e2-9dc9-4362-9d4c-88067a6022ad)**
+El APK se instala a mano, fuera de Google Play. Se descarga de la pagina de
+releases, se abre en el telefono, y Android va a pedir permiso para instalar
+"apps de origen desconocido" la primera vez: es el aviso normal de cualquier APK
+que no viene de la tienda.
 
-Esa pagina la publica EAS y abre sin cuenta: tiene el boton de descarga y un
-codigo QR para escanear desde el telefono. Como el APK no viene de la tienda,
-Android va a pedir permiso para instalar "apps de origen desconocido" la primera
-vez, que es el aviso normal de cualquier APK fuera de Play.
+Si ya tenias una version instalada se actualiza encima y no se pierde nada, porque
+los gastos viven en el servidor y no en el telefono.
 
-Ese link apunta a un build concreto de EAS y los artefactos de EAS caducan a los
-30 dias en el plan gratuito. Por eso, **a partir de la 1.4.0 el APK se publica
-tambien como release de este repositorio**, que es un link que no vence:
-[releases](https://github.com/LesmeFranco/wallai/releases).
+El link apunta siempre a la ultima version, asi que no hay que cambiarlo con cada
+build. El release tampoco vence, a diferencia de los artefactos de EAS, que se
+borran a los 30 dias en el plan gratuito.
 
 ### iOS
 
