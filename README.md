@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/marca/wallai-icono.svg" alt="" width="84">
+</p>
+
 <h1 align="center">Wallai</h1>
 
 <p align="center">
@@ -35,9 +39,15 @@ todo a la noche:
 7000 pan
 ```
 
-De cada renglon el sistema saca el monto (el numero que abre el texto, o
-cualquiera marcado con "$" o "pesos"), la fecha si la mencionaste, y le asigna
-una categoria. Cuando se equivoca, la corregis una vez y no se vuelve a equivocar
+Tambien separadas por coma, cuando van todas en un renglon:
+
+```
+5000 en pan, 7000 sube, hamburguesa 25000
+```
+
+De cada gasto el sistema saca el monto (el numero que abre o cierra el texto, o
+cualquiera marcado con "$" o "pesos": "5000 pan" y "pan 5000" valen igual), la
+fecha si la mencionaste, y le asigna una categoria. Cuando se equivoca, la corregis una vez y no se vuelve a equivocar
 con textos parecidos: esa correccion queda guardada y beneficia a todo el grupo.
 
 **El diferencial no es el tageo ni el multiusuario por separado**, que ya
@@ -136,11 +146,11 @@ link de invitacion. Los builds de prueba caducan a los 90 dias.
 
 ```bash
 pnpm install      # instala todo el workspace de una sola vez
-pnpm test         # 100 tests en packages/validators
+pnpm test         # 117 tests en packages/validators
 pnpm typecheck    # verifica los tipos de los 5 paquetes
 ```
 
-Que deberias ver: los 100 tests en verde y los 5 paquetes sin errores de tipos.
+Que deberias ver: los 117 tests en verde y los 5 paquetes sin errores de tipos.
 
 ### 2. Conectar la base de datos
 

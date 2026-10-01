@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { DemoEnVivo } from '../componentes/DemoEnVivo';
+import { Logo, MarcaWallai } from '../componentes/Logo';
 
 /**
  * La portada de Wallai.
@@ -17,8 +18,8 @@ import { DemoEnVivo } from '../componentes/DemoEnVivo';
  * en cinco segundos, que es lo que hace memorable a una página de producto.
  *
  * No hay 3D ni canvas ni video, y no es una limitación: las dos referencias que
- * miramos tampoco los usan. Lo que se siente "bien hecho" es el demo jugable y
- * el cuidado tipográfico, no los efectos.
+ * miramos tampoco los usan. Lo que se siente "bien hecho" es el demo jugable,
+ * el cuidado tipográfico y que nada esté de adorno.
  */
 
 export const metadata: Metadata = {
@@ -31,32 +32,71 @@ const URL_DESCARGA = 'https://github.com/LesmeFranco/wallai/releases/latest';
 const URL_REPO = 'https://github.com/LesmeFranco/wallai';
 
 export default function Portada() {
+  /*
+   * `overflow-x-clip` y no `overflow-x-hidden`: los resplandores de la pagina
+   * son divs absolutos que se salen a proposito de su contenedor, y en una
+   * pantalla angosta eso agregaba scroll horizontal (medido: 378px de contenido
+   * en una ventana de 360). `clip` corta lo que sobra sin convertir a `main` en
+   * un contenedor de scroll, que es lo que `hidden` haria.
+   */
   return (
-    <main className="mx-auto max-w-5xl px-6 pb-24">
+    <main className="relative mx-auto max-w-5xl overflow-x-clip px-6 pb-24">
+      {/*
+        El resplandor del fondo. Va detrás de todo (-z-10) y con `pointer-events-none`
+        para que no se coma ningún clic. Es lo único decorativo de la página y
+        existe para una sola cosa: que el hero no arranque sobre un negro plano.
+      */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[620px] overflow-hidden"
+      >
+        <div
+          className="absolute left-1/2 top-[-280px] h-[620px] w-[900px] -translate-x-1/2 opacity-[0.18] blur-[120px]"
+          style={{ background: 'radial-gradient(circle, #AAFF4D 0%, transparent 70%)' }}
+        />
+      </div>
+
       <nav className="flex items-center justify-between py-6">
-        <span className="text-[15px] font-bold tracking-tight text-primario">Wallai</span>
-        <a
-          href={URL_REPO}
-          className="text-[13px] text-secundario transition hover:text-primario"
-          target="_blank"
-          rel="noreferrer"
-        >
-          Código abierto
-        </a>
+        <Logo />
+        <div className="flex items-center gap-5">
+          <a
+            href={URL_REPO}
+            className="hidden text-[13px] text-secundario transition hover:text-primario sm:inline"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Código abierto
+          </a>
+          <a
+            href={URL_DESCARGA}
+            className="rounded-full border border-borde-claro bg-superficie px-4 py-2 text-[13px] font-semibold text-primario transition hover:border-lima/50"
+          >
+            Descargar
+          </a>
+        </div>
       </nav>
 
       {/* ----------------------------------------------------------------- */}
-      <section className="grid items-center gap-14 pt-6 pb-20 md:grid-cols-2 md:gap-12 md:pt-10">
+      <section className="grid items-center gap-14 pb-20 pt-6 md:grid-cols-[1fr_auto] md:gap-12 md:pt-12">
         <div>
-          <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-tenue">
-            Gastos de la casa
+          <p className="inline-flex items-center gap-2 rounded-full border border-borde bg-superficie px-3 py-1.5 text-[12px] text-secundario">
+            <span className="h-1.5 w-1.5 rounded-full bg-lima" />
+            Gratis, sin anuncios y sin conexión con ningún banco
           </p>
 
           <h1
-            className="mt-4 text-[38px] leading-[1.06] tracking-tight text-primario sm:text-[46px]"
+            className="mt-5 text-[40px] leading-[1.04] tracking-tight text-primario sm:text-[52px]"
             style={{ fontFamily: 'var(--font-display)', fontWeight: 800 }}
           >
-            Anotá lo que gastás como se lo contarías a alguien.
+            {/* El `{' '}` no es decorativo: JSX se come el espacio del final de
+                un renglon cuando lo sigue un elemento, asi que sin el, en el
+                telefono -donde el <br /> esta oculto- las palabras quedaban
+                pegadas ("gastáscomo"). */}
+            Anotá lo que gastás{' '}
+            <br className="hidden sm:inline" />
+            como se lo contarías{' '}
+            <br className="hidden sm:inline" />
+            <span className="text-lima">a alguien.</span>
           </h1>
 
           <p className="mt-6 max-w-md text-[17px] leading-7 text-secundario">
@@ -72,12 +112,20 @@ export default function Portada() {
             >
               Descargar para Android
             </a>
-            <span className="text-[13px] text-tenue">Gratis, sin cuenta paga</span>
+            <a
+              href={URL_REPO}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-2xl border border-borde-claro bg-superficie px-6 py-3.5 text-[15px] font-bold text-primario transition hover:border-lima/40"
+              style={{ fontFamily: 'var(--font-display)' }}
+            >
+              Ver el código
+            </a>
           </div>
 
           {/* Decir lo que falta, y no solo lo que hay, es lo que hace creible
               todo lo demas que dice la pagina. */}
-          <p className="mt-4 text-[13px] text-tenue">
+          <p className="mt-4 text-[13px] leading-6 text-tenue">
             Para iPhone todavía no hay descarga. El código compila para iOS; falta la cuenta de
             Apple que exige para repartir la app.
           </p>
@@ -88,16 +136,15 @@ export default function Portada() {
 
       {/* ----------------------------------------------------------------- */}
       <Seccion
-        titulo="Varios de una, uno por renglón"
-        cuerpo="Llegás a la noche y te acordás de todo junto. Escribís los cinco, uno abajo del otro, y se guardan los cinco con su categoría. Antes eso era abrir la pantalla cinco veces."
+        titulo="Escribilo como te salga"
+        cuerpo="El monto puede ir adelante o atrás, y varios gastos se separan por renglón o por coma. No hay formato que aprender: la app se adapta a cómo escribe cada uno, que es la única forma de que alguien la use todos los días."
       >
-        <Ejemplo
-          lineas={[
-            { texto: '3000 hamburguesa', detalle: '🍔 Comida' },
-            { texto: '5000 sube', detalle: '🚌 Transporte' },
-            { texto: '7000 pan', detalle: '🍔 Comida' },
-          ]}
-        />
+        <div className="grid gap-2.5">
+          <Forma texto="5000 pan" nota="el monto adelante" />
+          <Forma texto="pan 5000" nota="o atrás, da igual" />
+          <Forma texto="5000 pan, 7000 sube" nota="dos gastos, una línea" />
+          <Forma texto="8900 colectivo ayer" nota="y la fecha también entra" />
+        </div>
       </Seccion>
 
       {/* ----------------------------------------------------------------- */}
@@ -153,16 +200,47 @@ export default function Portada() {
       </Seccion>
 
       {/* ----------------------------------------------------------------- */}
-      <section className="mt-24 rounded-3xl border border-borde bg-superficie p-10 text-center">
+      <section className="border-t border-borde py-16">
         <h2
-          className="text-[28px] tracking-tight text-primario"
+          className="text-[30px] leading-tight tracking-tight text-primario"
+          style={{ fontFamily: 'var(--font-display)', fontWeight: 700 }}
+        >
+          Lo que Wallai no hace
+        </h2>
+        <p className="mt-4 max-w-xl text-[16px] leading-7 text-secundario">
+          Una app de gastos se vuelve inservible cuando pide demasiado. Estas tres cosas quedaron
+          afuera a propósito, y no están en el camino de entrar.
+        </p>
+        <div className="mt-8 grid gap-3 sm:grid-cols-3">
+          <NoHace
+            titulo="No se conecta al banco"
+            cuerpo="No pide claves, no lee resúmenes y no toca una tarjeta. Solo guarda lo que ustedes anotan."
+          />
+          <NoHace
+            titulo="No lleva deudas"
+            cuerpo="Nada de saldos entre personas ni liquidaciones. La pregunta es cuánto gastó la casa."
+          />
+          <NoHace
+            titulo="No cobra ni muestra anuncios"
+            cuerpo="Sin suscripción y sin publicidad. El código está publicado con licencia Apache 2.0."
+          />
+        </div>
+      </section>
+
+      {/* ----------------------------------------------------------------- */}
+      <section className="mt-10 overflow-hidden rounded-3xl border border-borde bg-superficie p-10 text-center">
+        <div className="flex justify-center">
+          <MarcaWallai tamano={48} />
+        </div>
+        <h2
+          className="mt-5 text-[28px] tracking-tight text-primario"
           style={{ fontFamily: 'var(--font-display)', fontWeight: 800 }}
         >
-          Es gratis y es abierto
+          Probala esta noche
         </h2>
         <p className="mx-auto mt-3 max-w-lg text-[15px] leading-7 text-secundario">
-          Sin suscripción, sin anuncios y sin conexión con ningún banco: Wallai solo guarda los
-          gastos que ustedes anotan. El código está publicado con licencia Apache 2.0.
+          Se instala, se escribe un gasto y listo. Si después querés compartir los gastos de la
+          casa, se arma un grupo con un link y cada uno anota desde su teléfono.
         </p>
         <div className="mt-7 flex flex-wrap justify-center gap-3">
           <a
@@ -185,7 +263,10 @@ export default function Portada() {
       </section>
 
       <footer className="mt-16 flex flex-wrap items-center justify-between gap-3 text-[12px] text-tenue">
-        <span>Wallai · Hecho en Argentina</span>
+        <span className="flex items-center gap-2">
+          <MarcaWallai tamano={18} redondeo={5} />
+          Wallai · Hecho en Argentina
+        </span>
         <span>Apache 2.0</span>
       </footer>
     </main>
@@ -218,16 +299,26 @@ function Seccion({
   );
 }
 
-/** Lista de renglones con su categoría, como los muestra la app al guardar. */
-function Ejemplo({ lineas }: { lineas: { texto: string; detalle: string }[] }) {
+/** Una forma de escribir un gasto, con el aclarador al costado. */
+function Forma({ texto, nota }: { texto: string; nota: string }) {
   return (
-    <div className="space-y-2.5 rounded-2xl border border-borde bg-superficie p-6">
-      {lineas.map((linea) => (
-        <div key={linea.texto} className="flex items-center justify-between gap-4">
-          <span className="text-[15px] text-primario">{linea.texto}</span>
-          <span className="shrink-0 text-[13px] text-secundario">{linea.detalle}</span>
-        </div>
-      ))}
+    <div className="flex items-center justify-between gap-4 rounded-2xl border border-borde bg-superficie px-5 py-4">
+      <span
+        className="text-[17px] tracking-tight text-primario"
+        style={{ fontFamily: 'var(--font-display)', fontWeight: 600 }}
+      >
+        {texto}
+      </span>
+      <span className="shrink-0 text-[12px] text-tenue">{nota}</span>
+    </div>
+  );
+}
+
+function NoHace({ titulo, cuerpo }: { titulo: string; cuerpo: string }) {
+  return (
+    <div className="rounded-2xl border border-borde bg-superficie p-5">
+      <p className="text-[15px] font-semibold text-primario">{titulo}</p>
+      <p className="mt-2 text-[13px] leading-6 text-secundario">{cuerpo}</p>
     </div>
   );
 }

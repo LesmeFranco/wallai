@@ -35,12 +35,15 @@ const config: ExpoConfig = {
    * la app, y permite cargar varios gastos de una, uno por renglon. 1.6.0 trae
    * la bienvenida del primer ingreso, el grafico de gasto por dia, el filtro por
    * categoria en el historial, y arregla que los datos tardaran en refrescarse y
-   * que salir de un grupo trabara el dashboard.
+   * que salir de un grupo trabara el dashboard. 1.7.0 trae la marca propia (hasta
+   * la 1.6.0 el icono era el celeste del template de Expo), el monto al final del
+   * texto y la coma como separador, el resumen del mes al tocar el total, y la
+   * descripcion de cada gasto sin el monto repetido adentro.
    *
    * Subirla no es tramite: es lo unico que permite mirar el telefono y saber
    * cual de los APK quedo instalado.
    */
-  version: '1.6.0',
+  version: '1.7.0',
   orientation: 'portrait',
   icon: './assets/icon.png',
   scheme: 'wallai',
@@ -71,9 +74,17 @@ const config: ExpoConfig = {
      * `version`, que es el texto que ve la persona. El primer build no lo
      * declaraba y quedo en 1.
      */
-    versionCode: 7,
+    versionCode: 8,
     adaptiveIcon: {
-      backgroundColor: '#0C0C13',
+      /**
+       * El fondo del icono adaptativo pasa a ser el lima de la marca.
+       *
+       * Estaba en el negro de la app, que era lo correcto mientras el icono
+       * era el del template de Expo. Con la marca propia el recuadro ES el
+       * lima: en la grilla del telefono, lleno de iconos de colores, un
+       * cuadrado casi negro desaparece y uno lima se encuentra sin buscarlo.
+       */
+      backgroundColor: '#AAFF4D',
       foregroundImage: './assets/android-icon-foreground.png',
       monochromeImage: './assets/android-icon-monochrome.png',
     },
