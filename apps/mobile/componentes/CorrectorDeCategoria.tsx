@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BotonPrimario, Etiqueta, MensajeError, PastillaCategoria } from './base';
-import { formatearPesosSinCentavos } from '../lib/formato';
+import { descripcionDeGasto, formatearPesosSinCentavos } from '../lib/formato';
 import { trpc } from '../lib/trpc';
 
 export type GastoACorregir = {
@@ -76,8 +76,10 @@ export function CorrectorDeCategoria({
         style={{ paddingBottom: 40 + insets.bottom }}
       >
         <Etiqueta>¿En qué categoría va?</Etiqueta>
+        {/* La descripcion sin el monto adentro: el monto ya esta justo abajo,
+            en grande. Ver `descripcionDeGasto`. */}
         <Text className="mt-1.5 font-cuerpo-semi text-[17px] text-primario" numberOfLines={2}>
-          {gasto.textoOriginal}
+          {descripcionDeGasto(gasto.textoOriginal) ?? 'Sin descripción'}
         </Text>
         <Text className="mt-0.5 font-display text-xl tracking-tight text-lima">
           {formatearPesosSinCentavos(gasto.montoCentavos)}

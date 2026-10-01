@@ -158,8 +158,12 @@ export function calcularProgresoObjetivo({
  *    ahi no hay nada que proyectar, el total ya es definitivo.
  *  - Es el ultimo dia: la proyeccion seria el gasto que ya se ve arriba.
  *  - No se gasto nada: proyectar cero a treinta dias es ruido.
+ *
+ * Es publica aunque haya nacido como detalle del objetivo: el resumen del mes
+ * muestra la proyeccion tambien cuando no hay ningun limite fijado, porque "a
+ * este ritmo cerras en X" se entiende sin necesidad de haberse puesto una meta.
  */
-function proyectarCierre({
+export function proyectarCierre({
   gastadoCentavos,
   desde,
   hasta,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { hoyArgentina, rangoMesActual, sumarDias } from './fechas';
+import { hoyArgentina, rangoMesActual, rangoMesAnterior, sumarDias } from './fechas';
 
 describe('hoyArgentina', () => {
   it('devuelve una fecha con formato AAAA-MM-DD', () => {
@@ -33,5 +33,16 @@ describe('rangoMesActual', () => {
     expect(desde).toBe(`${anio}-${mes}-01`);
     // La fecha de hoy siempre tiene que caer dentro del rango del mes actual.
     expect(desde <= hoy && hoy <= hasta).toBe(true);
+  });
+});
+
+describe('rangoMesAnterior', () => {
+  it('termina justo el día antes de que empiece el mes en curso', () => {
+    const { desde: empiezaEsteMes } = rangoMesActual();
+    const { desde, hasta } = rangoMesAnterior();
+    expect(sumarDias(hasta, 1)).toBe(empiezaEsteMes);
+    expect(desde.endsWith('-01')).toBe(true);
+    // El primero y el último día tienen que ser del mismo mes.
+    expect(desde.slice(0, 7)).toBe(hasta.slice(0, 7));
   });
 });

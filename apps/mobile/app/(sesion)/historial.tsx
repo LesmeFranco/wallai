@@ -7,17 +7,23 @@ import { BotonFlotante } from '../../componentes/BotonFlotante';
 import { EditorDeGasto } from '../../componentes/EditorDeGasto';
 import { useDialogos } from '../../componentes/Dialogo';
 import { SelectorDeAlcance, alcanceSeguro } from '../../componentes/SelectorDeAlcance';
+import { FiltroDeCategorias } from '../../componentes/FiltroDeCategorias';
 import {
   Cargando,
   IconoCategoria,
   MAX_ESCALA_MONTO,
   MensajeError,
-  PastillaCategoria,
   Tarjeta,
 } from '../../componentes/base';
 import { IconoBorrar, IconoBuscar, IconoCandado } from '../../componentes/iconos';
 import { useSesion } from '../../lib/sesion';
-import { capitalizar, formatearDiaLargo, formatearPesosCorto, formatearPesosSinCentavos } from '../../lib/formato';
+import {
+  capitalizar,
+  descripcionDeGasto,
+  formatearDiaLargo,
+  formatearPesosCorto,
+  formatearPesosSinCentavos,
+} from '../../lib/formato';
 import { trpc } from '../../lib/trpc';
 
 export default function Historial() {
@@ -145,16 +151,30 @@ export default function Historial() {
     [categorias.data],
   );
 
-  /** Las categorias en las que hay gastos este mes, para las pastillas del filtro. */
-  const categoriasParaFiltrar = useMemo(
-    () =>
-      (resumen.data?.porCategoria ?? []).map((fila) => ({
-        id: fila.categoriaId,
-        nombre: fila.nombre,
-        clave: categoriaPorId.get(fila.categoriaId)?.clave ?? null,
-      })),
-    [resumen.data, categoriaPorId],
-  );
+  /**
+   * Las categorias que se ofrecen para filtrar: las que tienen gastos este mes,
+   * mas la que este filtrada aunque no tenga ninguno.
+   *
+   * Ese "mas la filtrada" no es un detalle. El filtro puede llegar desde el
+   * inicio mirando el mes anterior, o desde un grupo con otro alcance; en esos
+   * casos la categoria no esta en el resumen de este mes y, sin agregarla, la
+   * fila no tendria como sacar el filtro que ella misma esta aplicando.
+   */
+  const categoriasParaFiltrar = useMemo(() => {
+    const conGastos = (resumen.data?.porCategoria ?? []).map((fila) => ({
+      id: fila.categoriaId,
+      nombre: fila.nombre,
+      clave: categoriaPorId.get(fila.categoriaId)?.clave ?? null,
+    }));
+
+    if (!categoriaFiltrada || conGastos.some((fila) => fila.id === categoriaFiltrada)) {
+      return conGastos;
+    }
+
+    const suelta = categoriaPorId.get(categoriaFiltrada);
+    if (!suelta) return conGastos;
+    return [{ id: suelta.id, nombre: suelta.nombre, clave: suelta.clave }, ...conGastos];
+  }, [resumen.data, categoriaPorId, categoriaFiltrada]);
 
   const nombreDeLaFiltrada = categoriaFiltrada
     ? (categoriaPorId.get(categoriaFiltrada)?.nombre ?? 'esa categoría')
@@ -210,46 +230,16 @@ export default function Historial() {
 
         <SelectorDeAlcance alcance={alcance} onCambiar={setAlcanceElegido} grupos={grupos.data ?? []} />
 
-        {/*
-          El filtro por categoria. Aparece solo si hay en que filtrar: con una
-          sola categoria con gastos, las pastillas serian una pregunta cuya
-          respuesta ya esta a la vista.
-        */}
-        {categoriasParaFiltrar.length > 1 ? (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerClassName="gap-2 pr-5"
-            className="mt-3"
-          >
-            <Pressable
-              onPress={() => router.setParams({ categoriaId: '' })}
-              className={`justify-center rounded-pastilla px-3.5 py-2 ${
-                categoriaFiltrada
-                  ? 'border-[1.5px] border-borde bg-superficie-alta'
-                  : 'border-[1.5px] border-lima bg-lima/15'
-              }`}
-            >
-              <Text
-                className={`font-cuerpo-semi text-[13px] ${
-                  categoriaFiltrada ? 'text-secundario' : 'text-lima'
-                }`}
-              >
-                Todas
-              </Text>
-            </Pressable>
-
-            {categoriasParaFiltrar.map((categoria) => (
-              <PastillaCategoria
-                key={categoria.id}
-                nombre={categoria.nombre}
-                clave={categoria.clave}
-                seleccionada={categoria.id === categoriaFiltrada}
-                onPress={() => router.setParams({ categoriaId: categoria.id })}
-              />
-            ))}
-          </ScrollView>
-        ) : null}
+        {/* El filtro por categoria. Que se dibuje o no lo decide el propio
+            componente, que es tambien donde esta explicado por que ahora se
+            dibuja casi siempre. */}
+        <FiltroDeCategorias
+          categorias={categoriasParaFiltrar}
+          seleccionada={categoriaFiltrada}
+          // El filtro vive en los parametros de la ruta (ver el comentario de
+          // `parametros`), asi que sacarlo es mandar el parametro vacio.
+          onCambiar={(categoriaId) => router.setParams({ categoriaId: categoriaId ?? '' })}
+        />
       </View>
 
       {gastos.isPending ? (
@@ -296,6 +286,17 @@ export default function Historial() {
                   // ni se les dibuja el tacho: un boton que siempre falla es
                   // peor que no tenerlo.
                   const autor = nombrePorUsuario.get(gasto.usuarioId);
+                  const nombreCategoria = categoria?.nombre ?? 'Otros';
+                  /**
+                   * La descripcion sin el monto adentro: "5000 pan" se lee
+                   * "Pan", y el monto queda una sola vez, a la derecha.
+                   *
+                   * Cuando no queda descripcion (alguien escribio "4500" y
+                   * nada mas) el titulo pasa a ser el nombre de la categoria,
+                   * que es lo unico que se sabe de ese gasto, y entonces no se
+                   * repite abajo.
+                   */
+                  const descripcion = descripcionDeGasto(gasto.textoOriginal);
                   return (
                     <Pressable key={gasto.id} onPress={() => setGastoAbierto(gasto)}>
                       <Tarjeta className="flex-row items-center gap-3 px-4 py-3.5 active:opacity-70">
@@ -305,15 +306,19 @@ export default function Historial() {
                             className="font-cuerpo-semi text-[15px] text-primario"
                             numberOfLines={1}
                           >
-                            {gasto.textoOriginal}
+                            {descripcion ?? nombreCategoria}
                           </Text>
                           <View className="mt-0.5 flex-row items-center gap-2">
-                            <Text className="font-cuerpo text-xs text-secundario">
-                              {categoria?.nombre ?? 'Otros'}
-                            </Text>
+                            {descripcion ? (
+                              <Text className="font-cuerpo text-xs text-secundario">
+                                {nombreCategoria}
+                              </Text>
+                            ) : null}
                             {autor && !esMio ? (
                               <>
-                                <Text className="font-cuerpo text-xs text-tenue">·</Text>
+                                {descripcion ? (
+                                  <Text className="font-cuerpo text-xs text-tenue">·</Text>
+                                ) : null}
                                 <Text className="font-cuerpo text-xs text-secundario">{autor}</Text>
                               </>
                             ) : null}
@@ -337,13 +342,15 @@ export default function Historial() {
                         </Text>
                         {esMio ? (
                           <Pressable
-                            onPress={() => void confirmarBorrado(gasto.id, gasto.textoOriginal)}
+                            onPress={() =>
+                              void confirmarBorrado(gasto.id, descripcion ?? nombreCategoria)
+                            }
                             disabled={eliminar.isPending}
                             // hitSlop agranda el area tocable sin agrandar el
                             // dibujo: un tacho de 18px es preciso de acertar
                             // con el pulgar, y fallar abre la hoja de edicion.
                             hitSlop={10}
-                            accessibilityLabel={`Borrar ${gasto.textoOriginal}`}
+                            accessibilityLabel={`Borrar ${descripcion ?? nombreCategoria}`}
                             className="ml-1 p-1 active:opacity-50"
                           >
                             <IconoBorrar />

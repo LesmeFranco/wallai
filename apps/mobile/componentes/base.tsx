@@ -1,7 +1,17 @@
-import { ActivityIndicator, Pressable, Text, TextInput, View, type TextInputProps } from 'react-native';
-import { useState, type ReactNode } from 'react';
+import {
+  AccessibilityInfo,
+  ActivityIndicator,
+  Pressable,
+  Text,
+  TextInput,
+  View,
+  type TextInputProps,
+  type TextProps,
+} from 'react-native';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { IconoOjo } from './iconos';
 import { presentacionDe } from '../lib/categorias';
+import { formatearPesosSinCentavos } from '../lib/formato';
 
 /**
  * Piezas visuales que se repiten en todas las pantallas.
@@ -241,5 +251,102 @@ export function Cargando() {
     <View className="flex-1 items-center justify-center">
       <ActivityIndicator color="#AAFF4D" />
     </View>
+  );
+}
+
+/**
+ * Un numero que sube desde donde estaba hasta su valor nuevo, en vez de
+ * aparecer de golpe.
+ *
+ * POR QUE: el total del mes es el dato principal de la app, y la animacion hace
+ * dos cosas que un numero quieto no hace. Cuando se abre la pantalla, subir
+ * desde cero dirige la vista al numero sin un cartel que lo senale. Y cuando se
+ * vuelve de cargar un gasto, subir DESDE EL TOTAL ANTERIOR muestra el cambio:
+ * se ve que el numero se movio y cuanto, que es justo lo que uno quiere saber
+ * al volver.
+ *
+ * Por eso arranca en cero solo la primera vez. Despues siempre parte de lo que
+ * ya estaba en pantalla.
+ *
+ * NO USA REANIMATED, y es a proposito: Reanimated anima estilos en el hilo de
+ * UI, pero esto cambia TEXTO, que es una propiedad del componente. Animar texto
+ * ahi obliga a un `TextInput` disfrazado y a `useAnimatedProps`. Un bucle de
+ * `requestAnimationFrame` que llama a setState unas cuarenta veces es mas
+ * simple y, para un numero solo, no se nota en el rendimiento.
+ */
+export function useMontoAnimado(destino: number, duracionMs = 700): number {
+  const [valor, setValor] = useState(0);
+  /** Desde donde arranca la proxima animacion: lo ultimo que se dibujo. */
+  const actual = useRef(0);
+  /**
+   * Si el sistema pidio menos movimiento. Arranca en null ("todavia no se") y no
+   * en false, para no animar y despues corregir: mientras no se sabe, no se
+   * anima nada.
+   */
+  const [reducirMovimiento, setReducirMovimiento] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let vivo = true;
+    void AccessibilityInfo.isReduceMotionEnabled().then((activado) => {
+      if (vivo) setReducirMovimiento(activado);
+    });
+    return () => {
+      vivo = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (reducirMovimiento === null) return;
+
+    if (reducirMovimiento) {
+      actual.current = destino;
+      setValor(destino);
+      return;
+    }
+
+    const desde = actual.current;
+    if (desde === destino) return;
+
+    let pedido = 0;
+    const comienzo = Date.now();
+
+    function paso() {
+      const avance = Math.min((Date.now() - comienzo) / duracionMs, 1);
+      // Cubica de salida: arranca rapido y frena al final, que es como se
+      // mueven las cosas en el mundo y lo que hace que no parezca un contador.
+      const suavizado = 1 - (1 - avance) ** 3;
+      const siguiente = Math.round(desde + (destino - desde) * suavizado);
+      actual.current = siguiente;
+      setValor(siguiente);
+      if (avance < 1) pedido = requestAnimationFrame(paso);
+    }
+
+    pedido = requestAnimationFrame(paso);
+    // Si el valor cambia a mitad de camino, la animacion anterior se corta y la
+    // nueva arranca desde donde habia quedado, no desde cero.
+    return () => cancelAnimationFrame(pedido);
+  }, [destino, duracionMs, reducirMovimiento]);
+
+  return valor;
+}
+
+/** El monto principal de una pantalla, con la animacion de `useMontoAnimado`. */
+export function MontoAnimado({
+  centavos,
+  className = '',
+  duracionMs,
+  formatear = formatearPesosSinCentavos,
+  ...resto
+}: Omit<TextProps, 'children'> & {
+  centavos: number;
+  className?: string;
+  duracionMs?: number;
+  formatear?: (centavos: number) => string;
+}) {
+  const valor = useMontoAnimado(centavos, duracionMs);
+  return (
+    <Text className={className} maxFontSizeMultiplier={MAX_ESCALA_MONTO} {...resto}>
+      {formatear(valor)}
+    </Text>
   );
 }

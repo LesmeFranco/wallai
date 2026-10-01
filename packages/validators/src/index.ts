@@ -60,7 +60,7 @@ export {
 
 export { normalizarTexto } from './texto';
 
-export { diasEntre, hoyArgentina, rangoMesActual, sumarDias } from './fechas';
+export { diasEntre, hoyArgentina, rangoMesActual, rangoMesAnterior, sumarDias } from './fechas';
 
 export {
   HORA_DEL_AVISO,
@@ -74,6 +74,7 @@ export {
   UMBRAL_CERCA,
   calcularProgresoObjetivo,
   fijarObjetivoSchema,
+  proyectarCierre,
   quitarObjetivoSchema,
   type EstadoObjetivo,
   type FijarObjetivoInput,

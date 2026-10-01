@@ -6,7 +6,7 @@ import {
   calcularProgresoObjetivo,
   hoyArgentina,
   rangoMesActual,
-  sumarDias,
+  rangoMesAnterior,
   type Alcance,
 } from '@wallai/validators';
 import { BotonFlotante } from '../../componentes/BotonFlotante';
@@ -16,10 +16,13 @@ import {
   IconoCategoria,
   MAX_ESCALA_MONTO,
   MensajeError,
+  MontoAnimado,
   Tarjeta,
 } from '../../componentes/base';
 import { GastoPorDia } from '../../componentes/GastoPorDia';
+import { IconoFlecha } from '../../componentes/iconos';
 import { Objetivo } from '../../componentes/Objetivo';
+import { ResumenDelMes } from '../../componentes/ResumenDelMes';
 import {
   DescripcionDeAlcance,
   SelectorDeAlcance,
@@ -27,20 +30,15 @@ import {
   tituloDeAlcance,
 } from '../../componentes/SelectorDeAlcance';
 import { presentacionDe } from '../../lib/categorias';
-import { formatearPesosCorto, formatearPesosSinCentavos } from '../../lib/formato';
+import {
+  descripcionDeGasto,
+  formatearPesosCorto,
+  formatearPesosSinCentavos,
+} from '../../lib/formato';
 import { reprogramarAvisos } from '../../lib/notificaciones';
 import { trpc } from '../../lib/trpc';
 
 type Periodo = 'este' | 'anterior';
-
-/** Primer y ultimo dia del mes anterior al actual, como ISO. */
-function rangoMesAnterior(): { desde: string; hasta: string } {
-  const { desde } = rangoMesActual();
-  // Un dia antes del primero de este mes cae en el ultimo dia del mes pasado.
-  const ultimoDelAnterior = sumarDias(desde, -1);
-  const [anio, mes] = ultimoDelAnterior.split('-') as [string, string];
-  return { desde: `${anio}-${mes}-01`, hasta: ultimoDelAnterior };
-}
 
 export default function Dashboard() {
   const insets = useSafeAreaInsets();
@@ -53,6 +51,8 @@ export default function Dashboard() {
    * vista personal.
    */
   const [alcanceElegido, setAlcanceElegido] = useState<Alcance>({ tipo: 'mio' });
+  /** Si esta abierta la hoja del resumen del mes (se abre tocando el total). */
+  const [resumenAbierto, setResumenAbierto] = useState(false);
 
   const rango = periodo === 'este' ? rangoMesActual() : rangoMesAnterior();
 
@@ -243,18 +243,36 @@ export default function Dashboard() {
         }
       >
         <Tarjeta className="mb-3 px-6 pb-5 pt-6">
-          <Etiqueta>Total del mes</Etiqueta>
-          {/* El tope de escala esta en todos los montos de la app: sin el, un
-              telefono con la letra del sistema en grande parte el numero en dos
-              renglones y lo corta contra el borde de la tarjeta. */}
-          <Text
-            className="mt-2 font-display-extra text-[44px] leading-none tracking-tighter text-lima"
-            maxFontSizeMultiplier={MAX_ESCALA_MONTO}
-            adjustsFontSizeToFit
-            numberOfLines={1}
+          {/*
+            Tocar el total abre el resumen del mes. El "Ver resumen" de la
+            derecha esta porque un numero no parece un boton: sin esa linea, la
+            hoja existiria y nadie la encontraria nunca.
+          */}
+          <Pressable
+            onPress={() => setResumenAbierto(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Ver el resumen del mes"
+            className="active:opacity-70"
           >
-            {formatearPesosSinCentavos(total)}
-          </Text>
+            <View className="flex-row items-center justify-between">
+              <Etiqueta>Total del mes</Etiqueta>
+              <View className="flex-row items-center gap-1">
+                <Text className="font-cuerpo-semi text-[11px] uppercase tracking-wide text-tenue">
+                  Ver resumen
+                </Text>
+                <IconoFlecha tamano={12} />
+              </View>
+            </View>
+            {/* El tope de escala esta en todos los montos de la app: sin el, un
+                telefono con la letra del sistema en grande parte el numero en dos
+                renglones y lo corta contra el borde de la tarjeta. */}
+            <MontoAnimado
+              centavos={total}
+              className="mt-2 font-display-extra text-[44px] leading-none tracking-tighter text-lima"
+              adjustsFontSizeToFit
+              numberOfLines={1}
+            />
+          </Pressable>
           {/* El objetivo es opcional: si no hay ninguno, esto es una linea gris
               para ponerlo, y nada mas. El componente decide que dibujar. */}
           <Objetivo
@@ -288,8 +306,12 @@ export default function Dashboard() {
                 >
                   {formatearPesosCorto(ultimoGasto.montoCentavos)}
                 </Text>
+                {/* Sin el monto adentro: arriba ya esta el numero, y repetirlo
+                    dentro del texto es el ruido que esta tarjeta mas sufre
+                    porque es la mas angosta. */}
                 <Text className="mt-0.5 font-cuerpo text-xs text-secundario" numberOfLines={1}>
-                  {ultimoGasto.textoOriginal}
+                  {descripcionDeGasto(ultimoGasto.textoOriginal) ??
+                    (claveDeCategoria.get(ultimoGasto.categoriaId) ? 'Sin descripción' : 'Otros')}
                 </Text>
               </View>
             ) : (
@@ -349,12 +371,18 @@ export default function Dashboard() {
                         <Text className="text-lg">{icono}</Text>
                         <Text className="font-cuerpo-medio text-sm text-primario">{fila.nombre}</Text>
                       </View>
-                      <Text
-                        className="font-display text-[15px] text-primario"
-                        maxFontSizeMultiplier={MAX_ESCALA_MONTO}
-                      >
-                        {formatearPesosCorto(fila.totalCentavos)}
-                      </Text>
+                      <View className="flex-row items-center gap-1.5">
+                        <Text
+                          className="font-display text-[15px] text-primario"
+                          maxFontSizeMultiplier={MAX_ESCALA_MONTO}
+                        >
+                          {formatearPesosCorto(fila.totalCentavos)}
+                        </Text>
+                        {/* La flecha es lo unico que dice que la fila se puede
+                            tocar. Sin ella la funcion existia desde la 1.6.0 y
+                            no se descubria. */}
+                        <IconoFlecha tamano={12} />
+                      </View>
                     </View>
                     <View className="h-1.5 overflow-hidden rounded-pastilla bg-borde">
                       <View
@@ -441,6 +469,15 @@ export default function Dashboard() {
       </ScrollView>
 
       <BotonFlotante />
+
+      <ResumenDelMes
+        abierto={resumenAbierto}
+        onCerrar={() => setResumenAbierto(false)}
+        resumen={resumen.data}
+        alcance={alcance}
+        tituloDeLaVista={tituloDeAlcance(alcance, misGrupos)}
+        clavePorCategoria={claveDeCategoria}
+      />
     </View>
   );
 }

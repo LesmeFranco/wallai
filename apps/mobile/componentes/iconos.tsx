@@ -200,3 +200,32 @@ export function IconoOjo({ tachado = false }: { tachado?: boolean }) {
     </Svg>
   );
 }
+
+/** Cruz chica: quita un filtro puesto, sin tener que volver a la pantalla anterior. */
+export function IconoCruz({ color = TENUE, tamano = 12 }: { color?: string; tamano?: number }) {
+  return (
+    <Svg width={tamano} height={tamano} viewBox="0 0 12 12" fill="none">
+      <Path d="M2.5 2.5l7 7M9.5 2.5l-7 7" stroke={color} strokeWidth={1.8} strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+/**
+ * Flecha chica a la derecha: marca que una fila lleva a otra pantalla.
+ *
+ * Importa en el desglose por categoria del inicio: las filas se podian tocar
+ * desde la 1.6.0 y no habia nada que lo dijera, asi que casi nadie lo descubria.
+ */
+export function IconoFlecha({ color = TENUE, tamano = 14 }: { color?: string; tamano?: number }) {
+  return (
+    <Svg width={tamano} height={tamano} viewBox="0 0 14 14" fill="none">
+      <Path
+        d="M5 3l4 4-4 4"
+        stroke={color}
+        strokeWidth={1.8}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}

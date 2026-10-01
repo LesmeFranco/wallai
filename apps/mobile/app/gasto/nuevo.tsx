@@ -27,7 +27,7 @@ import {
 } from '../../componentes/base';
 import { CorrectorDeCategoria } from '../../componentes/CorrectorDeCategoria';
 import { IconoTilde, IconoVolver } from '../../componentes/iconos';
-import { formatearPesosSinCentavos } from '../../lib/formato';
+import { descripcionDeGasto, formatearPesosSinCentavos } from '../../lib/formato';
 import { presentacionDeGrupo } from '../../lib/grupos';
 import { pedirPermisoTrasElPrimerGasto } from '../../lib/notificaciones';
 import { trpc } from '../../lib/trpc';
@@ -35,15 +35,17 @@ import { trpc } from '../../lib/trpc';
 /**
  * Ejemplos que se muestran como atajos.
  *
- * Ya no llevan "$": desde la 1.1.0 el parser toma como monto un numero que abra
+ * Ya no llevan "$": desde la 1.2.0 el parser toma como monto un numero que abra
  * el texto, sin marcador. Los atajos ensenan la forma mas corta que funciona,
  * porque es lo que la gente va a copiar; el "$" sigue valiendo y sigue ganando
  * cuando esta (ver packages/validators/src/parser.ts).
  *
- * Uno lleva "ayer" a proposito, para que se vea que la fecha tambien se puede
- * escribir dentro de la frase.
+ * DOS DE LOS CUATRO LLEVAN EL MONTO AL FINAL, que es lo que se agrego en la
+ * 1.7.0. Es la unica forma de que alguien se entere: nadie va a probar
+ * "nafta 30000" por su cuenta si los cuatro ejemplos empiezan por el numero.
+ * Y uno lleva "ayer", para que se vea que la fecha tambien entra en la frase.
  */
-const EJEMPLOS = ['30000 nafta Shell', '15500 café y medialunas', '8900 colectivo ayer', '45000 super Coto'];
+const EJEMPLOS = ['30000 nafta Shell', 'café y medialunas 15500', '8900 colectivo ayer', 'super Coto 45000'];
 
 type Estado = 'escribiendo' | 'guardado';
 
@@ -280,7 +282,9 @@ export default function NuevoGasto() {
                         className="font-cuerpo-semi text-[15px] text-primario"
                         numberOfLines={1}
                       >
-                        {gasto.textoOriginal}
+                        {descripcionDeGasto(gasto.textoOriginal) ??
+                          categoria?.nombre ??
+                          'Sin descripción'}
                       </Text>
                       <Text className="mt-0.5 font-cuerpo text-xs text-secundario">
                         {categoria?.nombre ?? 'Otros'}
@@ -427,7 +431,7 @@ export default function NuevoGasto() {
             <Etiqueta>¿Qué gastaste?</Etiqueta>
             {/* Va en la etiqueta y no en un cartel aparte: que cada renglon sea
                 un gasto hay que entenderlo antes de escribir, no despues. */}
-            <Etiqueta>Uno por línea</Etiqueta>
+            <Etiqueta>Uno por línea o coma</Etiqueta>
           </View>
           <TextInput
             value={texto}
@@ -442,7 +446,7 @@ export default function NuevoGasto() {
               gastos y el segundo sin monto. Ahora muestra tres gastos, que es
               lo que el salto de linea significa.
             */
-            placeholder={'3000 hamburguesa\n5000 sube\n7000 pan'}
+            placeholder={'3000 hamburguesa\npan 7000\nsube 5000'}
             placeholderTextColor="#5A5A78"
             multiline
             autoFocus
@@ -452,7 +456,8 @@ export default function NuevoGasto() {
 
           {lineas.length === 0 ? (
             <Text className="mt-2 font-cuerpo text-[13px] leading-5 text-tenue">
-              Empezá por el monto y seguí con qué fue. Si tenés varios, uno por renglón: Wallai los
+              El monto puede ir al principio o al final: &quot;5000 pan&quot; y &quot;pan
+              5000&quot; valen igual. Si tenés varios, separalos por renglón o por coma: Wallai los
               categoriza solos.
             </Text>
           ) : null}

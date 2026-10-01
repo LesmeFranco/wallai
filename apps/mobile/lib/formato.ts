@@ -1,4 +1,4 @@
-import { centavosAPesos } from '@wallai/validators';
+import { centavosAPesos, parsearTexto } from '@wallai/validators';
 
 /**
  * Formatos de pantalla, propios de la app mobile.
@@ -57,4 +57,38 @@ export function formatearDiaLargo(fechaISO: string): string {
 
 export function capitalizar(texto: string): string {
   return texto.charAt(0).toUpperCase() + texto.slice(1);
+}
+
+/**
+ * La descripcion de un gasto, sin el monto ni la palabra de fecha adentro.
+ *
+ * POR QUE EXISTE: lo que la persona escribe es "5000 pan", y asi se guarda
+ * (`gastos.texto_original` no se toca nunca: es la materia prima del motor). Si
+ * la lista muestra ese texto tal cual, cada fila dice el monto dos veces, una
+ * en el medio de la descripcion y otra en el numero de la derecha. Leer "5000
+ * pan ... $5k" es ruido, y encima el ruido crece con la plata.
+ *
+ * Se calcula con `parsearTexto`, que es exactamente el mismo codigo que uso el
+ * servidor para separar el monto cuando lo guardo. Por eso esto NO es volver a
+ * adivinar nada: muestra el pedazo de texto que el motor ya habia identificado
+ * como la descripcion, el mismo que compara contra las reglas aprendidas.
+ *
+ * Devuelve null cuando no queda nada ("4500" a secas, sin descripcion). El que
+ * llama decide con que llenar ese hueco, porque depende de la pantalla: en una
+ * lista conviene el nombre de la categoria, en una confirmacion no hace falta
+ * nada.
+ */
+export function descripcionDeGasto(textoOriginal: string): string | null {
+  const { textoRestante } = parsearTexto(textoOriginal);
+  return textoRestante ? capitalizar(textoRestante) : null;
+}
+
+const FORMATEADOR_MES = new Intl.DateTimeFormat('es-AR', {
+  timeZone: 'UTC',
+  month: 'long',
+});
+
+/** "2026-10-01" -> "octubre". Para titular un periodo sin repetir el ano. */
+export function formatearMes(fechaISO: string): string {
+  return FORMATEADOR_MES.format(new Date(`${fechaISO}T00:00:00Z`));
 }

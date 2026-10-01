@@ -44,6 +44,22 @@ export function rangoMesActual(): { desde: string; hasta: string } {
 }
 
 /**
+ * Primer y último día del mes anterior al que corre, como ISO.
+ *
+ * Vivía en el dashboard, que era el único que lo necesitaba para su pastilla
+ * "Mes anterior". Subió acá cuando el resumen del mes pasó a comparar contra el
+ * mes pasado: dos copias de la misma cuenta de calendario es exactamente la
+ * clase de código que se desincroniza sin que nadie lo note.
+ */
+export function rangoMesAnterior(): { desde: string; hasta: string } {
+  const { desde } = rangoMesActual();
+  // Un día antes del primero de este mes cae en el último día del mes pasado.
+  const ultimoDelAnterior = sumarDias(desde, -1);
+  const [anio, mes] = ultimoDelAnterior.split('-') as [string, string];
+  return { desde: `${anio}-${mes}-01`, hasta: ultimoDelAnterior };
+}
+
+/**
  * Cuántos días enteros hay entre dos fechas ISO, contando el primero como cero.
  * `diasEntre('2026-09-01', '2026-09-10')` da 9.
  *
