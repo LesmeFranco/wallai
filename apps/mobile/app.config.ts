@@ -32,12 +32,15 @@ const config: ExpoConfig = {
    * app, y acorta los mensajes de error. 1.4.0 cierra la fase 4.2: objetivos de
    * gasto, el aviso de la noche, y el pulido que hacia que la app se viera
    * distinta segun el telefono. 1.5.0 cambia la invitacion por un link que abre
-   * la app, y permite cargar varios gastos de una, uno por renglon.
+   * la app, y permite cargar varios gastos de una, uno por renglon. 1.6.0 trae
+   * la bienvenida del primer ingreso, el grafico de gasto por dia, el filtro por
+   * categoria en el historial, y arregla que los datos tardaran en refrescarse y
+   * que salir de un grupo trabara el dashboard.
    *
    * Subirla no es tramite: es lo unico que permite mirar el telefono y saber
    * cual de los APK quedo instalado.
    */
-  version: '1.5.0',
+  version: '1.6.0',
   orientation: 'portrait',
   icon: './assets/icon.png',
   scheme: 'wallai',
@@ -68,7 +71,7 @@ const config: ExpoConfig = {
      * `version`, que es el texto que ve la persona. El primer build no lo
      * declaraba y quedo en 1.
      */
-    versionCode: 6,
+    versionCode: 7,
     adaptiveIcon: {
       backgroundColor: '#0C0C13',
       foregroundImage: './assets/android-icon-foreground.png',

@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { Redirect } from 'expo-router';
 import { BotonPrimario, Campo, Cargando, MensajeError } from '../componentes/base';
-import { leerInvitacionPendiente } from '../lib/invitacion';
+import { useDestinoTrasEntrar } from '../lib/primerIngreso';
 import { IconoGoogle } from '../componentes/iconos';
 import { useSesion } from '../lib/sesion';
 
@@ -18,20 +18,15 @@ export default function Login() {
   const [cargando, setCargando] = useState(false);
 
   /**
-   * El codigo de la invitacion que quedo esperando, si la persona llego aca
-   * desde un link de invitacion sin tener sesion.
+   * A donde va la persona en cuanto haya sesion: la invitacion que quedo
+   * esperando, la bienvenida si nunca la vio, o el dashboard. La decision es
+   * la misma que toma `app/index.tsx`, y vive en un solo lugar a proposito.
    *
-   * `undefined` es "todavia no se leyo", distinto de `null`, que es "no hay
-   * ninguna". La diferencia importa: sin ella habria que elegir entre mostrar el
-   * dashboard por un instante antes de saltar a la invitacion, o dejar la
-   * pantalla en blanco a quien entra normalmente.
+   * `undefined` es "todavia no se resolvio", y es importante distinguirlo: sin
+   * eso habria que elegir entre mostrar el dashboard un instante antes de saltar
+   * a donde iba, o dejar la pantalla en blanco a quien entra normalmente.
    */
-  const [invitacion, setInvitacion] = useState<string | null | undefined>(undefined);
-
-  useEffect(() => {
-    if (!sesion) return;
-    void leerInvitacionPendiente().then(setInvitacion);
-  }, [sesion]);
+  const destino = useDestinoTrasEntrar(sesion?.user.id);
 
   const puedeEnviar = email.trim().length > 0 && contrasena.length > 0;
 
@@ -77,15 +72,15 @@ export default function Login() {
    * vuelta aca sin mostrar ningun error: parecia que el login no funcionaba.
    */
   if (sesion) {
-    if (invitacion === undefined) return <Cargando />;
+    if (!destino) return <Cargando />;
     // Quien llego por un link de invitacion vuelve a esa pantalla y no al
     // dashboard: entro para contestar algo, y dejarlo en el dashboard lo
     // obligaria a buscar el link otra vez en el chat.
-    return invitacion ? (
-      <Redirect href={{ pathname: '/unirse/[codigo]', params: { codigo: invitacion } }} />
-    ) : (
-      <Redirect href="/dashboard" />
-    );
+    if (destino.tipo === 'invitacion') {
+      return <Redirect href={{ pathname: '/unirse/[codigo]', params: { codigo: destino.codigo } }} />;
+    }
+    if (destino.tipo === 'bienvenida') return <Redirect href="/bienvenida" />;
+    return <Redirect href="/dashboard" />;
   }
 
   return (
