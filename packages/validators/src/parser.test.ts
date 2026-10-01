@@ -97,6 +97,81 @@ describe('parsearTexto', () => {
       expect(r.textoRestante).toBe('');
     });
   });
+
+  /**
+   * Lo que cambió en la 1.7.0: el monto también se reconoce al final, porque
+   * "pan 5000" es tan natural como "5000 pan" y obligar a una de las dos formas
+   * era fricción pura.
+   */
+  describe('monto sin marcador, al final del texto', () => {
+    it('lo toma como monto y lo saca del texto', () => {
+      const r = parsearTexto('pan 5000');
+      expect(r.montoCentavos).toBe(500000);
+      expect(r.textoRestante).toBe('pan');
+    });
+
+    it('funciona con una descripción larga', () => {
+      const r = parsearTexto('hamburguesa en Guido 30000');
+      expect(r.montoCentavos).toBe(3_000_000);
+      expect(r.textoRestante).toBe('hamburguesa en Guido');
+    });
+
+    it('funciona con separador de miles y con decimales', () => {
+      expect(parsearTexto('nafta 30.000').montoCentavos).toBe(3_000_000);
+      expect(parsearTexto('subte 1.250,50').montoCentavos).toBe(125050);
+    });
+
+    it('tolera el punto final de la oración', () => {
+      expect(parsearTexto('pan 5000.').montoCentavos).toBe(500000);
+    });
+
+    it('funciona combinado con la fecha, aunque la fecha vaya al final', () => {
+      // La palabra de fecha se saca antes de buscar el monto, justamente para
+      // que el número vuelva a quedar en la punta.
+      const r = parsearTexto('colectivo 8900 ayer');
+      expect(r.montoCentavos).toBe(890000);
+      expect(r.fecha).not.toBeNull();
+      expect(r.textoRestante).toBe('colectivo');
+    });
+
+    it('el marcador sigue ganando sobre la posición', () => {
+      const r = parsearTexto('$3000 cerveza 2');
+      expect(r.montoCentavos).toBe(300000);
+    });
+
+    it('un número pegado a otra cosa no es monto', () => {
+      expect(parsearTexto('cerveza 2x1').montoCentavos).toBeNull();
+      expect(parsearTexto('remera talle 42x30').montoCentavos).toBeNull();
+    });
+  });
+
+  /**
+   * Con un número en cada punta hay que elegir uno, y gana el más grande. El
+   * porqué está documentado en parser.ts: lo que distingue al precio de una
+   * cantidad o de un octanaje no es la posición sino el tamaño.
+   */
+  describe('un número en cada punta', () => {
+    it('la cantidad adelante no le gana al precio de atrás', () => {
+      const r = parsearTexto('2 empanadas 3000');
+      expect(r.montoCentavos).toBe(300000);
+      expect(r.textoRestante).toBe('2 empanadas');
+    });
+
+    it('el precio adelante no pierde contra un número chico de atrás', () => {
+      const r = parsearTexto('30000 nafta 95');
+      expect(r.montoCentavos).toBe(3_000_000);
+      expect(r.textoRestante).toBe('nafta 95');
+    });
+
+    it('con dos números iguales se queda con el primero', () => {
+      // El monto es el mismo de los dos lados, así que la regla del más grande
+      // no decide nada. Queda el primero, que es la descripción más probable
+      // ("500 cafe" y después otro 500 suelto).
+      const r = parsearTexto('500 cafe 500');
+      expect(r.montoCentavos).toBe(50000);
+      expect(r.textoRestante).toBe('cafe 500');
+    });
+  });
 });
 
 describe('separarEnGastos', () => {
@@ -142,5 +217,48 @@ describe('separarEnGastos', () => {
   it('tambien parte con saltos de linea de Windows', () => {
     const lineas = separarEnGastos('3000 cafe\r\n5000 sube');
     expect(lineas.map((l) => l.montoCentavos)).toEqual([300000, 500000]);
+  });
+
+  /**
+   * La coma como separador, que es lo que cambio en la 1.7.0. La condicion que
+   * la hace segura: se separa solo si todas las partes tienen monto.
+   */
+  describe('separar por comas', () => {
+    it('separa una enumeracion donde cada parte tiene su monto', () => {
+      const lineas = separarEnGastos('5000 en pan, 7000 sube, hamburguesa 25000');
+      expect(lineas.map((l) => l.texto)).toEqual(['5000 en pan', '7000 sube', 'hamburguesa 25000']);
+      expect(lineas.map((l) => l.montoCentavos)).toEqual([500000, 700000, 2_500_000]);
+    });
+
+    it('NO separa cuando alguna parte se queda sin monto', () => {
+      // Este es el contraejemplo que en la 1.5.0 hizo descartar la coma: es un
+      // gasto solo, con comas adentro de la descripcion.
+      const lineas = separarEnGastos('2000 cafe, medialunas y jugo');
+      expect(lineas).toHaveLength(1);
+      expect(lineas[0]?.texto).toBe('2000 cafe, medialunas y jugo');
+      expect(lineas[0]?.montoCentavos).toBe(200000);
+    });
+
+    it('no confunde la coma decimal con un separador de gastos', () => {
+      const lineas = separarEnGastos('1.250,50 subte');
+      expect(lineas).toHaveLength(1);
+      expect(lineas[0]?.montoCentavos).toBe(125050);
+    });
+
+    it('la coma decimal sigue valiendo dentro de una enumeracion', () => {
+      const lineas = separarEnGastos('1.250,50 subte, 3000 cafe');
+      expect(lineas.map((l) => l.montoCentavos)).toEqual([125050, 300000]);
+    });
+
+    it('una coma al final no inventa un gasto vacio', () => {
+      const lineas = separarEnGastos('3000 cafe,');
+      expect(lineas).toHaveLength(1);
+      expect(lineas[0]?.montoCentavos).toBe(300000);
+    });
+
+    it('se combina con los saltos de linea', () => {
+      const lineas = separarEnGastos('5000 pan, 7000 sube\n25000 hamburguesa');
+      expect(lineas.map((l) => l.montoCentavos)).toEqual([500000, 700000, 2_500_000]);
+    });
   });
 });

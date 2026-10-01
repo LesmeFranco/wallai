@@ -77,7 +77,7 @@ export const gastosRouter = router({
         code: 'BAD_REQUEST',
         // El ejemplo enseña la forma más corta que funciona, que es con la que
         // conviene que la persona se quede: el monto abriendo el texto.
-        message: 'Falta el monto. Empezá por ahí: "500 café".',
+        message: 'Falta el monto. Puede ir al principio o al final: "500 café" o "café 500".',
       });
     }
 
@@ -163,7 +163,7 @@ export const gastosRouter = router({
             code: 'BAD_REQUEST',
             // Se nombra la linea: con varias juntas, "falta el monto" sin decir
             // dónde obliga a revisarlas todas.
-            message: `Falta el monto en "${texto}". Empezá por ahí: "500 café".`,
+            message: `Falta el monto en "${texto}". Puede ir al principio o al final.`,
           });
         }
 
