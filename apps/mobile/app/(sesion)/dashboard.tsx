@@ -18,10 +18,12 @@ import {
   MensajeError,
   Tarjeta,
 } from '../../componentes/base';
+import { GastoPorDia } from '../../componentes/GastoPorDia';
 import { Objetivo } from '../../componentes/Objetivo';
 import {
   DescripcionDeAlcance,
   SelectorDeAlcance,
+  alcanceSeguro,
   tituloDeAlcance,
 } from '../../componentes/SelectorDeAlcance';
 import { presentacionDe } from '../../lib/categorias';
@@ -50,11 +52,35 @@ export default function Dashboard() {
    * aparece al entrar a un grupo, que es donde se comparte; no derramado en la
    * vista personal.
    */
-  const [alcance, setAlcance] = useState<Alcance>({ tipo: 'mio' });
+  const [alcanceElegido, setAlcanceElegido] = useState<Alcance>({ tipo: 'mio' });
 
   const rango = periodo === 'este' ? rangoMesActual() : rangoMesAnterior();
 
+  const utils = trpc.useUtils();
+
+  /**
+   * Al entrar a esta pestana se refresca lo que muestra.
+   *
+   * Las dependencias son solo `utils`, que es estable, asi que corre una vez
+   * por foco y no se puede enganchar en un bucle con los datos que invalida.
+   */
+  useFocusEffect(
+    useCallback(() => {
+      void utils.hogares.mios.invalidate();
+      void utils.hogares.resumen.invalidate();
+      void utils.gastos.listar.invalidate();
+    }, [utils]),
+  );
+
   const grupos = trpc.hogares.mios.useQuery();
+
+  /**
+   * El alcance que se usa de verdad, corregido si apunta a un grupo del que la
+   * persona ya no forma parte (ver `alcanceSeguro`). Sin esto, salir de un grupo
+   * dejaba esta pantalla trabada mostrando un error sin salida.
+   */
+  const alcance = alcanceSeguro(alcanceElegido, grupos.data);
+
   const resumen = trpc.hogares.resumen.useQuery({ ...rango, alcance });
   const categorias = trpc.categorias.listar.useQuery();
   /** Los ultimos gastos, para las tarjetas de "ultimo gasto" y "hoy". */
@@ -139,6 +165,27 @@ export default function Dashboard() {
   // UTC, asi que despues de las 21:00 hora argentina devolveria el dia
   // siguiente y la tarjeta de "Hoy" quedaria siempre en cero a la noche.
   // La tarjeta solo tiene sentido mirando el mes en curso.
+  /**
+   * Lleva al historial mostrando lo mismo que se esta mirando aca, y filtrado
+   * por una categoria si se toco una.
+   *
+   * Se pasa tambien el alcance porque el historial tiene su propio selector y
+   * arranca en "Mis gastos": tocar la categoria Comida del desglose de la casa y
+   * aterrizar en los gastos personales seria desconcertante. Van como
+   * parametros sueltos y no como objeto porque los parametros de ruta son
+   * strings.
+   */
+  function irAlHistorial(categoriaId?: string) {
+    router.push({
+      pathname: '/historial',
+      params: {
+        ...(categoriaId ? { categoriaId } : {}),
+        alcanceTipo: alcance.tipo,
+        ...(alcance.tipo === 'hogar' ? { hogarId: alcance.hogarId } : {}),
+      },
+    });
+  }
+
   const hoy = periodo === 'este' ? hoyArgentina() : null;
   const gastosDeHoy = (ultimos.data?.gastos ?? []).filter((g) => g.fecha === hoy);
   const totalDeHoy = gastosDeHoy.reduce((suma, g) => suma + g.montoCentavos, 0);
@@ -176,7 +223,7 @@ export default function Dashboard() {
           componente se encarga de esa decision.
         */}
         <View className="mt-2">
-          <SelectorDeAlcance alcance={alcance} onCambiar={setAlcance} grupos={misGrupos} />
+          <SelectorDeAlcance alcance={alcance} onCambiar={setAlcanceElegido} grupos={misGrupos} />
           {misGrupos.length > 0 ? <DescripcionDeAlcance alcance={alcance} /> : null}
         </View>
       </View>
@@ -265,6 +312,14 @@ export default function Dashboard() {
           </Tarjeta>
         </View>
 
+        {/* El orden de las tarjetas cuenta una historia: cuanto (el total),
+            cuando (por dia), en que (por categoria) y quien (por persona). */}
+        <GastoPorDia
+          porDia={resumen.data.porDia}
+          desde={resumen.data.desde}
+          hasta={resumen.data.hasta}
+        />
+
         <Tarjeta className="mb-3 p-5">
           <View className="mb-4 flex-row items-center justify-between">
             <Text className="font-display text-[17px] text-primario">Por categoría</Text>
@@ -281,7 +336,14 @@ export default function Dashboard() {
                 const clave = claveDeCategoria.get(fila.categoriaId) ?? null;
                 const { icono, color } = presentacionDe(clave);
                 return (
-                  <View key={fila.categoriaId}>
+                  /* Tocar una categoria lleva al historial filtrado por ella:
+                     el desglose dice EN QUE se fue la plata, y la pregunta que
+                     sigue siempre es EN QUE GASTOS. */
+                  <Pressable
+                    key={fila.categoriaId}
+                    onPress={() => irAlHistorial(fila.categoriaId)}
+                    className="active:opacity-60"
+                  >
                     <View className="mb-1.5 flex-row items-center justify-between">
                       <View className="flex-row items-center gap-2">
                         <Text className="text-lg">{icono}</Text>
@@ -303,15 +365,17 @@ export default function Dashboard() {
                         }}
                       />
                     </View>
-                  </View>
+                  </Pressable>
                 );
               })}
             </View>
           )}
 
-          {resumen.data.porCategoria.length > 5 ? (
-            <Pressable onPress={() => router.push('/historial')} className="mt-3">
-              <Text className="font-cuerpo-semi text-[13px] text-lima">Ver todas</Text>
+          {resumen.data.porCategoria.length > 0 ? (
+            <Pressable onPress={() => irAlHistorial()} className="mt-3 active:opacity-70">
+              <Text className="font-cuerpo-semi text-[13px] text-lima">
+                {resumen.data.porCategoria.length > 5 ? 'Ver todas' : 'Ver los gastos'}
+              </Text>
             </Pressable>
           ) : null}
         </Tarjeta>

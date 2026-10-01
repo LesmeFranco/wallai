@@ -96,6 +96,37 @@ export function SelectorDeAlcance({
   );
 }
 
+/**
+ * Corrige el alcance elegido si apunta a un grupo al que la persona ya no
+ * pertenece.
+ *
+ * EL BUG QUE ARREGLA, reportado por Franco: estando dentro de un grupo y
+ * saliendo de el, el dashboard se quedaba con `{tipo:'hogar', hogarId}` en su
+ * estado. `hogares.resumen` contesta FORBIDDEN -correctamente, porque ya no es
+ * miembro-, la pantalla dibujaba solo el mensaje de error y no habia forma de
+ * salir de ahi: el selector ya no mostraba la pastilla de ese grupo, asi que no
+ * se podia tocar otra.
+ *
+ * Se corrige en un solo lugar y no en cada pantalla porque el dashboard y el
+ * historial tienen cada uno su propio estado de alcance y los dos pueden quedar
+ * apuntando a un grupo que ya no esta. Y se hace mirando la lista de grupos en
+ * vez de reaccionar al evento de salir, para que tambien cubra los casos que no
+ * son "yo me fui": que el grupo se haya borrado porque era el ultimo, o que la
+ * persona haya salido desde otro telefono.
+ *
+ * Mientras la lista todavia no cargo (`grupos` en undefined) NO se corrige
+ * nada: si no, al abrir la app el alcance elegido se perderia siempre, porque
+ * la primera respuesta de la consulta es que no hay grupos todavia.
+ */
+export function alcanceSeguro(
+  alcance: Alcance,
+  grupos: GrupoParaSelector[] | undefined,
+): Alcance {
+  if (alcance.tipo !== 'hogar' || grupos === undefined) return alcance;
+  const sigueSiendoMiembro = grupos.some((grupo) => grupo.id === alcance.hogarId);
+  return sigueSiendoMiembro ? alcance : { tipo: 'mio' };
+}
+
 /** El titulo que describe el alcance elegido, para el encabezado de la pantalla. */
 export function tituloDeAlcance(alcance: Alcance, grupos: GrupoParaSelector[]): string {
   if (alcance.tipo === 'hogar') {

@@ -267,6 +267,28 @@ export const hogaresRouter = router({
       .groupBy(usuarios.id, usuarios.nombre)
       .orderBy(sql`sum(${gastos.montoCentavos}) desc`);
 
+    /**
+     * Cuanto se gasto cada dia del periodo.
+     *
+     * Es para el grafico de picos del dashboard: ver en que dias se gasto mas y
+     * en cuales nada. Se agrupa en la base y no sumando los gastos en el
+     * telefono porque el telefono solo tiene la ultima pagina del historial
+     * (las ultimas 20 o 50 filas), asi que para un mes entero le faltarian
+     * dias enteros y el grafico mentiria sin que se note.
+     *
+     * Solo devuelve los dias que tienen gastos. Los dias en cero los completa
+     * la pantalla, que es la que sabe el rango que esta dibujando.
+     */
+    const porDia = await ctx.db
+      .select({
+        fecha: gastos.fecha,
+        totalCentavos: sql<number>`sum(${gastos.montoCentavos})::bigint`,
+      })
+      .from(gastos)
+      .where(filtroPeriodo)
+      .groupBy(gastos.fecha)
+      .orderBy(asc(gastos.fecha));
+
     const porCategoria = await ctx.db
       .select({
         categoriaId: categorias.id,
@@ -308,6 +330,7 @@ export const hogaresRouter = router({
       },
       porPersona: porPersona.map((fila) => ({ ...fila, totalCentavos: Number(fila.totalCentavos) })),
       porCategoria: porCategoria.map((fila) => ({ ...fila, totalCentavos: Number(fila.totalCentavos) })),
+      porDia: porDia.map((fila) => ({ ...fila, totalCentavos: Number(fila.totalCentavos) })),
     };
   }),
 });

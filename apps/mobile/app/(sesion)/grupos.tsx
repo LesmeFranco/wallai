@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { Pressable, ScrollView, Share, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useCallback, useState } from 'react';
+import { Pressable, RefreshControl, ScrollView, Share, Text, View } from 'react-native';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
 import { rutaDeInvitacion } from '@wallai/validators';
@@ -32,6 +32,26 @@ export default function PantallaGrupos() {
   const { salir } = useSesion();
 
   const grupos = trpc.hogares.mios.useQuery();
+  const utils = trpc.useUtils();
+
+  /**
+   * Al entrar a esta pestana se vuelve a pedir la lista de grupos.
+   *
+   * EL PROBLEMA QUE ARREGLA, reportado por Franco: cuando alguien se sumaba a
+   * la casa tardaba muchisimo en aparecer. La causa es que las pestanas
+   * mantienen la pantalla MONTADA: cambiar de pestana y volver no vuelve a
+   * pedir nada, y con el `staleTime` de un minuto la lista podia quedar vieja
+   * indefinidamente mientras la app siguiera abierta.
+   *
+   * Se usa `invalidate` y no `refetch` porque tambien alcanza a la consulta del
+   * resumen que usa cada tarjeta de grupo para los totales por integrante.
+   */
+  useFocusEffect(
+    useCallback(() => {
+      void utils.hogares.mios.invalidate();
+      void utils.hogares.resumen.invalidate();
+    }, [utils]),
+  );
 
   if (grupos.isPending) return <Cargando />;
 
@@ -92,7 +112,17 @@ export default function PantallaGrupos() {
         Mis grupos
       </Text>
 
-      <ScrollView className="flex-1" contentContainerClassName="px-5 pb-6">
+      <ScrollView
+        className="flex-1"
+        contentContainerClassName="px-5 pb-6"
+        refreshControl={
+          <RefreshControl
+            refreshing={grupos.isFetching}
+            onRefresh={() => void grupos.refetch()}
+            tintColor="#AAFF4D"
+          />
+        }
+      >
         {misGrupos.map((grupo) => (
           <TarjetaDeGrupo key={grupo.id} grupo={grupo} />
         ))}

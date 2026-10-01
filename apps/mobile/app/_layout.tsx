@@ -1,12 +1,12 @@
 import '../global.css';
 
 import { useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { AppState, View } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, focusManager } from '@tanstack/react-query';
 import { useFonts } from 'expo-font';
 import { Outfit_600SemiBold, Outfit_700Bold, Outfit_800ExtraBold } from '@expo-google-fonts/outfit';
 import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold } from '@expo-google-fonts/inter';
@@ -28,6 +28,28 @@ import { crearClienteTrpc, trpc } from '../lib/trpc';
  * poder retener su pantalla de carga seria mucho peor que el parpadeo.
  */
 void SplashScreen.preventAutoHideAsync().catch(() => {});
+
+/**
+ * Le ensena a TanStack Query cuando la app vuelve al frente.
+ *
+ * POR QUE HACE FALTA, y es un bug que estuvo todo este tiempo: TanStack Query
+ * trae `refetchOnWindowFocus` activado, pero "window focus" es un concepto de
+ * navegador. En una app nativa no existe, asi que sin esto NO se repedia nada
+ * nunca al volver a la app, aunque el comentario del `staleTime` de abajo diera
+ * por hecho que si. El sintoma que lo delato: alguien se sumaba a un grupo y
+ * tardaba muchisimo en aparecer en la lista de integrantes.
+ *
+ * `setEventListener` es la forma que recomienda la documentacion para React
+ * Native: se le pasa el AppState y Query decide cuando repedir, en vez de
+ * llamar a `setFocused` a mano, que puede dejar el estado en "sin foco" si la
+ * suscripcion se limpia en mal momento.
+ */
+focusManager.setEventListener((manejarFoco) => {
+  const suscripcion = AppState.addEventListener('change', (estado) => {
+    manejarFoco(estado === 'active');
+  });
+  return () => suscripcion.remove();
+});
 
 export default function LayoutRaiz() {
   const [fuentesListas] = useFonts({
@@ -57,8 +79,13 @@ export default function LayoutRaiz() {
             /**
              * Un minuto antes de considerar los datos viejos. El dashboard es
              * agregacion calculada en el momento, asi que cada pedido trae el
-             * estado actual; este margen evita repetir la consulta al cambiar
-             * de pestana y volver.
+             * estado actual; este margen evita repetir la consulta dos veces
+             * seguidas por un toque de mas.
+             *
+             * El margen NO significa que haya que esperar un minuto para ver un
+             * cambio: cada pantalla invalida lo que muestra al tomar foco (ver
+             * los `useFocusEffect` del dashboard, el historial y los grupos), y
+             * el `focusManager` de arriba repide al volver a la app.
              */
             staleTime: 60_000,
             retry: 1,
