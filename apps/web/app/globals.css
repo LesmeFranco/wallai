@@ -24,3 +24,31 @@
   --color-lima: #aaff4d;
   --color-coral: #ff6b6b;
 }
+
+/**
+ * El recorte horizontal de la pagina.
+ *
+ * Los resplandores de la portada son divs absolutos que se salen de su
+ * contenedor a proposito, y sin esto agregan scroll horizontal en una pantalla
+ * angosta (medido: 378px de contenido en una ventana de 360).
+ *
+ * VA EN EL BODY Y NO EN UN CONTENEDOR DE ADENTRO. Estuvo un rato en el `main`
+ * de la portada, que mide 1024px como maximo y esta centrado, asi que el
+ * resplandor del telefono se cortaba contra el borde del contenido y dejaba una
+ * linea verde recta en el medio de la pantalla. Recortando aca, el corte queda
+ * en el borde de la ventana, donde no se ve.
+ *
+ * `clip` y no `hidden`: `hidden` convierte al elemento en un contenedor de
+ * scroll, y eso rompe cualquier `position: sticky` que venga despues.
+ */
+/*
+ * VA EN LOS DOS, html y body, y no en uno solo. Poner `overflow` solo en el
+ * `body` no alcanza: el navegador PROPAGA ese valor al viewport y, cuando lo
+ * propaga, trata al propio `body` como `visible`, asi que no recorta nada.
+ * Medido: con la regla solo en `body`, una ventana de 360px seguia teniendo
+ * 378px de contenido.
+ */
+html,
+body {
+  overflow-x: clip;
+}

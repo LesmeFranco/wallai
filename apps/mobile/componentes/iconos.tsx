@@ -229,3 +229,26 @@ export function IconoFlecha({ color = TENUE, tamano = 14 }: { color?: string; ta
     </Svg>
   );
 }
+
+/**
+ * La marca de Wallai: el recuadro lima con la W de un trazo.
+ *
+ * Es el mismo dibujo que el icono de la app (ver docs/marca/). Vive acá, como
+ * SVG, y no como una imagen: a 40px una imagen se ve blanda en una pantalla de
+ * alta densidad, y ademas asi el color sale de las props y no hay un PNG mas que
+ * mantener sincronizado con el resto de la marca.
+ */
+export function MarcaWallai({ tamano = 40 }: { tamano?: number }) {
+  return (
+    <Svg width={tamano} height={tamano} viewBox="0 0 100 100" fill="none">
+      <Rect width={100} height={100} rx={22} fill={LIMA} />
+      <Path
+        d="M 23 32 L 37 70 L 50 40 L 63 70 L 79 22"
+        stroke={FONDO}
+        strokeWidth={9}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}

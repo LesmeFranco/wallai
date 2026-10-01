@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { DemoEnVivo } from '../componentes/DemoEnVivo';
+import { DescargarAndroid, ProximamenteIOS } from '../componentes/Descargas';
 import { Logo, MarcaWallai } from '../componentes/Logo';
 
 /**
@@ -33,14 +34,16 @@ const URL_REPO = 'https://github.com/LesmeFranco/wallai';
 
 export default function Portada() {
   /*
-   * `overflow-x-clip` y no `overflow-x-hidden`: los resplandores de la pagina
-   * son divs absolutos que se salen a proposito de su contenedor, y en una
-   * pantalla angosta eso agregaba scroll horizontal (medido: 378px de contenido
-   * en una ventana de 360). `clip` corta lo que sobra sin convertir a `main` en
-   * un contenedor de scroll, que es lo que `hidden` haria.
+   * El recorte horizontal NO va acá sino en el `body` (globals.css).
+   *
+   * Estuvo un rato en este `main` y era un error visible: `main` mide 1024px
+   * como máximo y está centrado, así que el resplandor del teléfono -que se sale
+   * de su contenedor a propósito- se cortaba contra el borde del contenido y
+   * dejaba una línea verde recta en el medio de la pantalla. Recortando en el
+   * `body`, el corte pasa a estar en el borde de la ventana, donde no se ve.
    */
   return (
-    <main className="relative mx-auto max-w-5xl overflow-x-clip px-6 pb-24">
+    <main className="relative mx-auto max-w-5xl px-6 pb-24">
       {/*
         El resplandor del fondo. Va detrás de todo (-z-10) y con `pointer-events-none`
         para que no se coma ningún clic. Es lo único decorativo de la página y
@@ -104,30 +107,22 @@ export default function Portada() {
             <span className="text-primario"> No lleva la cuenta de quién le debe a quién.</span>
           </p>
 
+          {/*
+            Los dos botones son las dos plataformas, y no "descargar" y "ver el
+            código". Quien entra por primera vez quiere saber si la puede usar en
+            SU teléfono; el código es una pregunta posterior y por eso quedó
+            arriba en la barra y abajo del todo, no acá.
+          */}
           <div className="mt-8 flex flex-wrap items-center gap-3">
-            <a
-              href={URL_DESCARGA}
-              className="rounded-2xl bg-lima px-6 py-3.5 text-[15px] font-bold text-fondo transition hover:brightness-110"
-              style={{ fontFamily: 'var(--font-display)' }}
-            >
-              Descargar para Android
-            </a>
-            <a
-              href={URL_REPO}
-              target="_blank"
-              rel="noreferrer"
-              className="rounded-2xl border border-borde-claro bg-superficie px-6 py-3.5 text-[15px] font-bold text-primario transition hover:border-lima/40"
-              style={{ fontFamily: 'var(--font-display)' }}
-            >
-              Ver el código
-            </a>
+            <DescargarAndroid />
+            <ProximamenteIOS />
           </div>
 
           {/* Decir lo que falta, y no solo lo que hay, es lo que hace creible
               todo lo demas que dice la pagina. */}
           <p className="mt-4 text-[13px] leading-6 text-tenue">
-            Para iPhone todavía no hay descarga. El código compila para iOS; falta la cuenta de
-            Apple que exige para repartir la app.
+            El código ya compila para iOS: lo que falta es la cuenta de Apple que exigen para
+            repartir la app.
           </p>
         </div>
 
@@ -243,13 +238,7 @@ export default function Portada() {
           casa, se arma un grupo con un link y cada uno anota desde su teléfono.
         </p>
         <div className="mt-7 flex flex-wrap justify-center gap-3">
-          <a
-            href={URL_DESCARGA}
-            className="rounded-2xl bg-lima px-6 py-3.5 text-[15px] font-bold text-fondo transition hover:brightness-110"
-            style={{ fontFamily: 'var(--font-display)' }}
-          >
-            Descargar para Android
-          </a>
+          <DescargarAndroid />
           <a
             href={URL_REPO}
             target="_blank"

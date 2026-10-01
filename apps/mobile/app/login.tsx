@@ -3,7 +3,7 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } fro
 import { Redirect } from 'expo-router';
 import { BotonPrimario, Campo, Cargando, MensajeError } from '../componentes/base';
 import { useDestinoTrasEntrar } from '../lib/primerIngreso';
-import { IconoGoogle } from '../componentes/iconos';
+import { IconoGoogle, MarcaWallai } from '../componentes/iconos';
 import { useSesion } from '../lib/sesion';
 
 export default function Login() {
@@ -94,9 +94,10 @@ export default function Login() {
       >
         <View className="mb-[52px]">
           <View className="mb-2 flex-row items-center gap-2.5">
-            <View className="h-10 w-10 items-center justify-center rounded-xl bg-lima">
-              <Text className="text-xl">💸</Text>
-            </View>
+            {/* La marca de verdad. Hasta la 1.7.0 esto era un cuadrado lima
+                con un emoji adentro, que era lo que habia mientras no existia
+                el logo. */}
+            <MarcaWallai tamano={40} />
             <Text className="font-display-extra text-[28px] tracking-tight text-primario">
               Wallai
             </Text>
