@@ -1,0 +1,5 @@
+<!-- La marca sola, en el negro de la app, para fondos claros o sobre el lima. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" role="img" aria-label="Wallai">
+  <path d="M 23 32 L 37 70 L 50 40 L 63 70 L 79 22" fill="none" stroke="#0C0C13"
+        stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
