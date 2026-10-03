@@ -13,11 +13,19 @@
 <br>
 
 <p align="center">
-  <img src="docs/capturas/wallai-app.png" alt="Dashboard de Wallai: total del mes, ultimo gasto y desglose por categoria y por persona" width="300">
+  <a href="https://wallai-three.vercel.app"><b>Probar el motor sin instalar nada</b></a>
+  &nbsp;·&nbsp;
+  <a href="https://github.com/LesmeFranco/wallai/releases/latest"><b>Descargar para Android</b></a>
+</p>
+
+<br>
+
+<p align="center">
+  <img src="docs/capturas/wallai-inicio.png" alt="Pantalla de inicio de Wallai: total del mes, ultimo gasto, gasto por dia y desglose por categoria" width="300">
 </p>
 
 <p align="center">
-  <sub><b>El dashboard.</b> Cuanto gasto la casa este mes, con el desglose por categoria y por persona.</sub>
+  <sub><b>El inicio.</b> Cuanto se gasto este mes, en que dias, y en que se fue.</sub>
 </p>
 
 <br>
@@ -75,34 +83,44 @@ tenia dos servidores prendidos y el telefono estaba en la misma Wi-Fi.
 | 4.1 | Deploy del backend en Vercel y build de Android con EAS | Completa |
 | 4.2 | Objetivos de gasto, aviso de la noche, pulido de UI | Completa |
 
-La ultima version es la **1.4.0**, publicada en
-[releases](https://github.com/LesmeFranco/wallai/releases/latest). Lo que trajeron
-las ultimas salio entero de usar la app todos los dias: el selector de que
-gastos se miran sin la vista que mezclaba lo propio con lo de los demas, la
-correccion de categoria con un paso de confirmar, el
-login con Google funcionando, el monto sin necesidad de escribir "$" adelante, el
-ojo para ver la contrasena al escribirla, y los cuadros de confirmar con el
-estilo de la app en vez de los del sistema.
+**El MVP esta cerrado desde la 4.2.** Todo lo que vino despues salio de usar la
+app todos los dias, que es la unica fuente del roadmap ahora:
 
-La 1.4.0 cierra el MVP con las tres cosas que faltaban:
+| Version | Que trajo |
+|---|---|
+| 1.1.0 | El selector sin la vista que mezclaba lo propio con lo de los demas, la correccion de categoria con un paso de confirmar, el login con Google |
+| 1.2.0 | El monto sin necesidad de escribir "$", y el ojo para ver la contrasena |
+| 1.3.0 | Los cuadros de confirmar con el estilo de la app en vez de los del sistema |
+| 1.4.0 | Objetivos de gasto, el aviso de la noche, y la interfaz que quedaba abajo de los botones de Android |
+| 1.5.0 | La invitacion como link, y cargar varios gastos de una sola vez |
+| 1.6.0 | La bienvenida del primer ingreso, el grafico de gasto por dia, el filtro por categoria |
+| **1.7.0** | La marca propia, el monto al final y separado por comas, el resumen del mes, el filtro que se puede sacar |
 
-- **Objetivos de gasto.** Uno por vista -el propio y el de cada grupo-, mensual,
-  sobre el total, y opcional: si no se pone ninguno, el dashboard queda igual.
-- **El aviso de la noche.** Una sola notificacion por dia, a las 21, y en un dia
-  normal **no suena**: si cargaste tus gastos y venis bien con el objetivo, no
-  hay nada que decir. Ver la seccion propia.
-- **El pulido de UI**, que era sobre todo la app viendose distinta segun el
-  telefono Android. Ver las notas del final.
+La ultima es la **1.7.0**, publicada en
+[releases](https://github.com/LesmeFranco/wallai/releases/latest):
 
-Lo que queda: los detalles que solo aparecen usandola a diario. Para iOS el
-codigo ya esta listo; lo que falta es la cuenta de Apple Developer, que es lo
-unico que permite instalar la app en un iPhone de verdad.
+- **Wallai tiene logo.** Hasta la 1.6.0 el icono instalado era el que viene con
+  el template de Expo. Ahora es una sola linea continua que baja, sube al pico
+  del medio, vuelve a bajar y remata mas alto que donde empezo: lee como una W y
+  como la linea de un grafico. Esta en `docs/marca/`, con la guia al lado.
+- **El monto va donde salga.** "pan 5000" vale igual que "5000 pan", y una coma
+  separa gastos cuando todas las partes tienen monto.
+- **El total del mes se toca.** Sube desde cero al abrir la app y abre un resumen
+  con lo que un numero solo no dice: cuanto mas o menos que el mes pasado, cuanto
+  por dia, en cuanto cierra el mes a este ritmo y cual fue el dia mas caro.
+- **La lista dejo de repetir el monto.** Un gasto cargado como "5000 pan" se lee
+  "Pan", con el numero una sola vez, a la derecha.
+
+Lo que queda: los detalles que solo aparecen usandola a diario, y Google Play,
+que pide borrado de cuenta y politica de privacidad. Para iOS el codigo ya esta
+listo; lo que falta es la cuenta de Apple Developer, que es lo unico que permite
+instalar la app en un iPhone de verdad.
 
 ## Descargar la app
 
 ### Android
 
-**[Descargar Wallai 1.4.0 para Android](https://github.com/LesmeFranco/wallai/releases/latest)**
+**[Descargar Wallai 1.7.0 para Android](https://github.com/LesmeFranco/wallai/releases/latest)**
 
 El APK se instala a mano, fuera de Google Play. Se descarga de la pagina de
 releases, se abre en el telefono, y Android va a pedir permiso para instalar
@@ -272,21 +290,29 @@ existe en un build independiente.
 
 ```
 apps/
-  web/            Next.js (App Router). Hostea el backend tRPC.
+  web/            Next.js (App Router). Tres cosas en un solo deploy:
+                  el backend tRPC, la portada del producto (con el demo que
+                  corre el motor de verdad en el navegador) y la pagina que
+                  abre un link de invitacion.
   mobile/         Expo Router + NativeWind. La app de verdad.
     app/          Rutas. (sesion)/ exige sesion; el resto es publico.
                   (sesion)/: dashboard, historial, grupos.
-                  gasto/nuevo, grupo/crear, grupo/unirse, login.
+                  gasto/nuevo, grupo/crear, grupo/unirse, login, bienvenida.
     componentes/  Piezas visuales compartidas entre pantallas.
     lib/          Cliente de Supabase, sesion, tRPC, formato y presentacion.
 packages/
   validators/     Zod y logica de dominio pura. Sin acceso a base ni servidor,
-                  que es lo que permite usarlo tambien desde la app mobile.
+                  que es lo que permite usarlo tambien desde la app mobile y
+                  desde el demo de la portada.
   db/             Schema de Drizzle, migraciones, cliente, seed y verificacion.
     src/schema/   Una tabla por archivo, con el porque de cada decision.
     migraciones/  SQL generado. Se commitea: es el historial de la base.
-  api/            Routers de tRPC (gastos, hogares, categorias), puente del JWT
-                  y el motor de tageo.
+  api/            Routers de tRPC (gastos, hogares, categorias, objetivos),
+                  puente del JWT y el motor de tageo.
+docs/
+  marca/          El logo, el script que genera los iconos de la app a partir
+                  de el, y la guia de marca.
+  capturas/       Las capturas que usa este archivo.
 ```
 
 ## El modelo de datos en una linea cada tabla
@@ -328,6 +354,13 @@ Sumarse nunca es automatico al tocar el link. Un link que te mete en un grupo co
 solo tocarlo es un link que cualquiera puede usar para meterte donde no querias.
 
 ## Como funciona el motor de tageo
+
+**Se puede probar sin instalar nada** en
+[wallai-three.vercel.app](https://wallai-three.vercel.app): el demo de la portada
+no es una maqueta, corre las mismas funciones que la app y el servidor. Como
+`packages/validators` es logica pura, el mismo codigo que categoriza un gasto en
+el telefono funciona en el navegador. Lo que se ve ahi es ademas el caso menos
+favorable: sin reglas aprendidas, que es lo que ve alguien el primer dia.
 
 No hay ningun modelo entrenado ni IA generativa, y no es una limitacion: la
 promesa del producto es "corregilo una vez y no se vuelve a equivocar con algo
