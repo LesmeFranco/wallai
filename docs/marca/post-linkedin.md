@@ -81,8 +81,11 @@ Primer comentario:
 ## Cómo publicarlo
 
 - **El video o la imagen van en el posteo.** Sin imagen, un texto largo en
-  LinkedIn se ve como un bloque gris. El video vertical del `prompt-video.md`
-  funciona; una captura real de la app también.
+  LinkedIn se ve como un bloque gris. Va el video vertical, o una captura de la
+  app.
+- **Si usás un recorte de la grabación del teléfono, mirá qué quedó en cuadro.**
+  En la grabación original se ven los códigos de invitación de los grupos, y
+  cualquiera que pause el video puede sumarse con ellos.
 - **Si pegás solo el link**, la vista previa que arma LinkedIn ya sale bien: la
   imagen la genera `apps/web/app/opengraph-image.tsx`.
 - **Las tres primeras líneas son las únicas que se ven** antes del "ver más".
