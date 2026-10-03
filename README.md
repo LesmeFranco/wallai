@@ -20,16 +20,6 @@
 
 <br>
 
-<p align="center">
-  <img src="docs/capturas/wallai-inicio.png" alt="Pantalla de inicio de Wallai: total del mes, ultimo gasto, gasto por dia y desglose por categoria" width="300">
-</p>
-
-<p align="center">
-  <sub><b>El inicio.</b> Cuanto se gasto este mes, en que dias, y en que se fue.</sub>
-</p>
-
-<br>
-
 ## Que es
 
 Una app de gastos para una familia. La carga es una frase:
