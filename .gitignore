@@ -35,3 +35,7 @@ Thumbs.db
 npm-debug.log*
 pnpm-debug.log*
 .gstack/
+
+# Folders
+docs/capturas/
+docs/videos
